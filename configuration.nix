@@ -34,11 +34,13 @@
   };
 
   boot = {
-    # TEMPORARY: Use 6.17.x until 6.18.x/6.19.x amdgpu bugs are fixed
-    # See: https://community.frame.work/t/attn-critical-bugs-in-amdgpu-driver-included-with-kernel-6-18-x-6-19-x/79221
-    # kernelPackages = pkgs.linuxPackages_6_17;  # Uncomment to use stable 6.17.x
+    # Using 6.18.2 with Arch Wiki workarounds for AMD Strix Point (Lenovo T14 Gen 6)
+    # Arch Wiki (P14s Gen 6) confirms 6.17+ needed for WiFi/sleep support
+    # Testing aggressive workarounds to address MES buffer saturation issues
+    # See: https://wiki.archlinux.org/title/Lenovo_ThinkPad_P14s_(AMD)_Gen_6
     kernelPackages =
-      pkgs.linuxPackages_latest; # Currently 6.18.x with workarounds
+      pkgs.linuxPackages_latest; # 6.18.2 - with aggressive GPU workarounds
+    # kernelPackages = pkgs.linuxPackages_6_12; # Fallback: LTS if 6.18 still unstable
 
     kernelParams = [
       # USB: mitigate xHCI refusing D0->D3hot / flaky suspend behavior

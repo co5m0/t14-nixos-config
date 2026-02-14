@@ -3,19 +3,17 @@
 {
   boot.kernelParams = [
     # --- CPU & System ---
-    "amd_pstate=active"         # AMD P-State driver for better CPU power management
-    "iommu=pt"                  # IOMMU passthrough for better performance
+    "amd_pstate=active" # AMD P-State driver for better CPU power management
+    "iommu=pt" # IOMMU passthrough for better performance
 
-    # --- GPU Core Fixes (CRITICAL for 6.18.x on Strix Point) ---
-    "amdgpu.mes=0"              # Disable MES (mitigates "MES ring buffer is full" hangs/log spam)
-    "amdgpu.gpu_recovery=1"     # Enable GPU recovery from hangs
-    "amdgpu.cwsr_enable=0"      # Disable broken CWSR (see: https://bugs.gentoo.org/967078)
-    "amdgpu.ip_block_mask=0xfffff7ff"  # Disable VPE (bit 11) - fixes VPE queue reset failures
+    # --- GPU: Kernel 6.18.2 + Aggressive Workarounds ---
+    # Based on Arch Wiki (P14s Gen 6): https://wiki.archlinux.org/title/Lenovo_ThinkPad_P14s_(AMD)_Gen_6
+    "amdgpu.dcdebugmask=0x10" # Arch Wiki: Fixes screen flickering & massive terminal lags
 
-    # --- Optional: Uncomment if you experience specific issues ---
-    # "amdgpu.runpm=0"          # Disable runtime PM (only if suspend/resume issues persist)
-    # "amdgpu.gfx_off=0"        # Disable GFX power saving (only if freezes during idle)
-    # "amdgpu.dcdebugmask=0x10" # Disable PSR (only if screen flickering with external displays)
+    # Aggressive workarounds for MES buffer saturation on Strix Point (gfx1150)
+    "amdgpu.runpm=0" # Disable runtime PM - prevents GPU power state issues
+    "amdgpu.mes=0" # Disable MES (Micro Engine Scheduler) - known to cause ring buffer hangs
+    "amdgpu.gpu_recovery=1" # Enable GPU recovery on hangs
   ];
 
   # Force amdgpu driver early load
@@ -31,9 +29,9 @@
         vulkan-loader
 
         # Video acceleration (Note: VPE disabled, using software encoding)
-        libva-utils       # VA-API utilities
-        vaapiVdpau        # VA-API to VDPAU translation
-        libvdpau-va-gl    # VDPAU support
+        libva-utils # VA-API utilities
+        vaapiVdpau # VA-API to VDPAU translation
+        libvdpau-va-gl # VDPAU support
 
         # Uncomment if you need OpenCL/ROCm support for GPU compute:
         # rocmPackages.clr.icd
@@ -72,8 +70,8 @@
 
       # USB autosuspend (useful for battery, but exclude input devices)
       USB_AUTOSUSPEND = 1;
-      USB_EXCLUDE_BTUSB = 1;  # Don't suspend Bluetooth
-      USB_EXCLUDE_PHONE = 1;  # Don't suspend tethered phones
+      USB_EXCLUDE_BTUSB = 1; # Don't suspend Bluetooth
+      USB_EXCLUDE_PHONE = 1; # Don't suspend tethered phones
 
       # Battery Charge Thresholds (40-80% for longevity)
       START_CHARGE_THRESH_BAT0 = 40;
