@@ -13,7 +13,15 @@
     # Aggressive workarounds for MES buffer saturation on Strix Point (gfx1150)
     "amdgpu.runpm=0" # Disable runtime PM - prevents GPU power state issues
     "amdgpu.mes=0" # Disable MES (Micro Engine Scheduler) - known to cause ring buffer hangs
-    "amdgpu.gpu_recovery=1" # Enable GPU recovery on hangs
+    # amdgpu.gpu_recovery=1 REMOVED: taints kernel as "dangerous/support-ended" every boot,
+    # no actual GPU hangs observed (MES already disabled, runpm=0 stable).
+    # Re-enable only if gfx/sdma ring timeouts reappear in dmesg.
+
+    # VPE (Video Processing Engine v6.1) fails to reset during s2idle suspend:
+    # "amdgpu: VPE queue reset failed" → causes suspend instability on Strix Point.
+    # amdgpu has no 'vpe=' param; use ip_block_mask instead.
+    # IP blocks 0-10 = 0x7FF (all except block 11 = VPE).
+    "amdgpu.ip_block_mask=0x7FF"
   ];
 
   # Force amdgpu driver early load
@@ -64,14 +72,19 @@
       RADEON_DPM_STATE_ON_BAT = "battery";
 
       # PCIe Active State Power Management
-      # Keep GPU PCIe at performance to prevent stability issues
+      # Keep GPU PCIe at performance on AC to prevent stability issues
       PCIE_ASPM_ON_AC = "performance";
-      PCIE_ASPM_ON_BAT = "performance";
+      # powersupersave safe here: amdgpu.runpm=0 already holds GPU state,
+      # no risk of PCIe instability caused by aggressive ASPM on GPU link.
+      PCIE_ASPM_ON_BAT = "powersupersave";
 
       # USB autosuspend (useful for battery, but exclude input devices)
       USB_AUTOSUSPEND = 1;
       USB_EXCLUDE_BTUSB = 1; # Don't suspend Bluetooth
       USB_EXCLUDE_PHONE = 1; # Don't suspend tethered phones
+      # Synaptics fingerprint reader (06cb:00f9): loses state after s2idle resume,
+      # causing fprintd "device disconnected" errors. Exclude from autosuspend.
+      USB_DENYLIST = "06cb:00f9";
 
       # Battery Charge Thresholds (40-80% for longevity)
       START_CHARGE_THRESH_BAT0 = 40;

@@ -72,6 +72,11 @@
     };
   };
 
+  # sch_cake qdisc is a kernel module on this config, must be loaded explicitly
+  # so net.core.default_qdisc = "cake" takes effect at boot.
+  # (kvm-amd is already declared in hardware-configuration.nix)
+  boot.kernelModules = [ "sch_cake" ];
+
   # --- 2. Networking & Services ---
   networking.hostName = "js-laptop";
   networking.networkmanager.enable = true;
