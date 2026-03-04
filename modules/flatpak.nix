@@ -23,6 +23,9 @@
       "com.slack.Slack"
       "org.signal.Signal"
 
+      # Task Managers (optional - uncomment if needed)
+      "com.super_productivity.SuperProductivity"
+
       # Notes/PKM (optional - uncomment if needed)
       # "md.obsidian.Obsidian"
 
