@@ -6,7 +6,7 @@
     layout = "us";
     variant = "altgr-intl";
   };
-  console.useXkbConfig = true;  # Use same layout in console
+  console.useXkbConfig = true; # Use same layout in console
   # --- BLUETOOTH FIX ---
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
@@ -20,6 +20,7 @@
   services.gnome.gnome-keyring.enable = true;
 
   # Enable keyring unlock at login (cosmic-greeter handles this)
+  security.pam.services.login.enableGnomeKeyring = true;
   security.pam.services.cosmic-greeter.enableGnomeKeyring = true;
 
   # Essential packages for keyring management
