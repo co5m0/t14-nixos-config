@@ -92,13 +92,10 @@
 
         sops
         nix-direnv
-        # Dev
-        gcc
-        gnumake
         nodejs_22
         (python3.withPackages (p: [ p.ipython ]))
         gh
-        glab # GitLab CLI
+        pkgs-unstable.glab # GitLab CLI (unstable: >1.66 required)
 
         tree
         # App
@@ -128,11 +125,6 @@
         nixfmt-classic
         mailspring
 
-        # ✅ RUST Toolchain (Binary for faster builds)
-        # TODO: rust-bin richiede rust-overlay input nel flake
-        # rust-bin.stable.latest.default
-        rustc
-        cargo
 
         zed
 
@@ -147,6 +139,10 @@
 
         # OpenCode - VSCode alternative
         opencode
+        ansible
+
+        # Rust toolchain manager (toolchains installed via `rustup` at runtime)
+        rustup
       ];
     sessionVariables = {
       # Forza le app Electron a usare Wayland nativo (risparmio CPU/Batteria)
@@ -162,6 +158,11 @@
         export GITHUB_TOKEN="$(cat ${config.sops.secrets.github_token.path})"
       fi
     '';
+
+    # rustup: add cargo and active toolchain binaries to PATH
+    sessionPath = [
+      "$HOME/.cargo/bin"
+    ];
   };
 
   # nixenv environment templates
@@ -364,10 +365,10 @@
   services.ssh-agent.enable = true;
   services.network-manager-applet.enable = true;
 
-  services.gnome-keyring = {
-    enable = true;
-    components = [ "pkcs11" "secrets" "ssh" ];
-  };
+  # services.gnome-keyring = {
+  #   enable = true;
+  #   components = [ "pkcs11" "secrets" "ssh" ];
+  # };
 
   services.nextcloud-client = {
     enable = true;
