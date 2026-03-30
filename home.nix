@@ -1,4 +1,4 @@
-{ inputs, config, pkgs, pkgs-unstable, ... }: {
+{ inputs, config, lib, pkgs, pkgs-unstable, ... }: {
   imports = [ inputs.sops-nix.homeManagerModules.sops ];
 
   sops = {
@@ -95,6 +95,7 @@
         nodejs_22
         (python3.withPackages (p: [ p.ipython ]))
         gh
+        github-copilot-cli # Provides: github-copilot-cli, ghcs, ghce aliases
         pkgs-unstable.glab # GitLab CLI (unstable: >1.66 required)
 
         tree
@@ -160,9 +161,25 @@
     '';
 
     # rustup: add cargo and active toolchain binaries to PATH
+    # npm global installs
     sessionPath = [
       "$HOME/.cargo/bin"
+      "$HOME/.npm-global/bin"
     ];
+
+    activation.installNpmGlobalPackages = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+      $DRY_RUN_CMD ${pkgs.nodejs_22}/bin/npm install -g --prefix "$HOME/.npm-global" @github/copilot 2>&1 | tail -3
+    '';
+  };
+
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "x-scheme-handler/http" = [ "zen-beta.desktop" ];
+      "x-scheme-handler/https" = [ "zen-beta.desktop" ];
+      "text/html" = [ "zen-beta.desktop" ];
+      "application/xhtml+xml" = [ "zen-beta.desktop" ];
+    };
   };
 
   # nixenv environment templates
@@ -329,6 +346,9 @@
         source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
         [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
+        # npm global binaries (e.g. copilot)
+        export PATH="$HOME/.npm-global/bin:$PATH"
+
         # Export GitLab Token for glab and gitlab.nvim
         if [ -f "${config.sops.secrets.gitlab_token.path}" ]; then
           export GITLAB_TOKEN="$(cat ${config.sops.secrets.gitlab_token.path})"
@@ -378,6 +398,11 @@
   # --- 4. STATO ---
   home.stateVersion = "25.05";
   programs.home-manager.enable = true;
+
+  programs.gh = {
+    enable = true;
+    extensions = [ pkgs.gh-copilot ]; # enables: gh copilot suggest / explain
+  };
 
   systemd.user.services.fix-dbus-environment = {
     Unit = {
