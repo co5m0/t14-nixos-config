@@ -105,7 +105,7 @@
 
             # Altri strumenti utili
             htop
-            neofetch
+            fastfetch
           ];
 
           # 3. Variabili d'ambiente (opzionale, ma utile)

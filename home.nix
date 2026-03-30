@@ -100,7 +100,7 @@
 
         tree
         # App
-        neofetch
+        fastfetch # System info (modern neofetch replacement)
         inputs.zen-browser.packages."${pkgs.system}".default
         discord # Installato a livello utente (non Flatpak)
 
