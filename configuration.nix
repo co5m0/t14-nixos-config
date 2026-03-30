@@ -4,6 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ./modules/amd-optimization.nix
+    ./modules/amd-suspend-fix.nix
     ./modules/desktop.nix
     ./modules/flatpak.nix
   ];
@@ -43,8 +44,13 @@
     # kernelPackages = pkgs.linuxPackages_6_12; # Fallback: LTS if 6.18 still unstable
 
     kernelParams = [
-      # USB: mitigate xHCI refusing D0->D3hot / flaky suspend behavior
-      "usbcore.autosuspend=-1"
+      # Suspend mode: Force s2idle (modern suspend-to-idle for AMD Ryzen)
+      # Strix Point works best with s2idle, not deep sleep
+      "mem_sleep_default=s2idle"
+
+      # Note: USB autosuspend now managed by TLP (see amd-optimization.nix)
+      # Removed global usbcore.autosuspend=-1 to avoid conflict with TLP
+
       # Bluetooth: reduce common controller quirks/noise on some chipsets
       "btusb.enable_autosuspend=n"
     ];
@@ -93,6 +99,40 @@
 
   };
 
+  # NordVPN (pacchetto dal flake, configurazione manuale)
+  # Il modulo nixosModules del flake non è compatibile con nixpkgs 25.05
+
+  users.groups.nordvpn = { };
+
+  networking.firewall = {
+    checkReversePath = false;
+    allowedTCPPorts = [ 443 ];
+    allowedUDPPorts = [ 1194 ];
+  };
+
+  systemd.services.nordvpn = {
+    description = "NordVPN daemon";
+    wantedBy = [ "multi-user.target" ];
+    after = [ "network-online.target" ];
+    wants = [ "network-online.target" ];
+    serviceConfig = {
+      ExecStartPre = pkgs.writeShellScript "nordvpn-start" ''
+        mkdir -m 700 -p /var/lib/nordvpn
+        if [ -z "$(ls -A /var/lib/nordvpn)" ]; then
+          cp -r ${inputs.nordvpn.packages.${pkgs.system}.default}/var/lib/nordvpn/* /var/lib/nordvpn
+        fi
+      '';
+      ExecStart = "${inputs.nordvpn.packages.${pkgs.system}.default}/bin/nordvpnd";
+      NonBlocking = true;
+      KillMode = "process";
+      Restart = "on-failure";
+      RestartSec = 5;
+      RuntimeDirectory = "nordvpn";
+      RuntimeDirectoryMode = "0750";
+      Group = "nordvpn";
+    };
+  };
+
   virtualisation.docker.enable = true;
   security.polkit.enable = true;
 
@@ -122,7 +162,7 @@
   users.users.js = {
     isNormalUser = true;
     description = "js";
-    extraGroups = [ "networkmanager" "wheel" "docker" ];
+    extraGroups = [ "networkmanager" "wheel" "docker" "nordvpn" "video" ];
     shell = pkgs.zsh;
   };
   programs.nix-ld.enable = true;
@@ -143,6 +183,9 @@
 
     # Network tools
     netcat-gnu
+
+    # VPN
+    inputs.nordvpn.packages.${pkgs.system}.default
 
     # Note: Removed duplicates that are in home.nix or desktop.nix:
     # - wget (in home.nix)
