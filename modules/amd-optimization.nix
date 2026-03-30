@@ -13,9 +13,9 @@
     # Aggressive workarounds for MES buffer saturation on Strix Point (gfx1150)
     "amdgpu.runpm=0" # Disable runtime PM - prevents GPU power state issues
     "amdgpu.mes=0" # Disable MES (Micro Engine Scheduler) - known to cause ring buffer hangs
-    # amdgpu.gpu_recovery=1 REMOVED: taints kernel as "dangerous/support-ended" every boot,
-    # no actual GPU hangs observed (MES already disabled, runpm=0 stable).
-    # Re-enable only if gfx/sdma ring timeouts reappear in dmesg.
+    "amdgpu.gpu_recovery=1" # Enable GPU recovery for ring timeout/hang scenarios (taints kernel but needed for stability)
+    "amdgpu.lockup_timeout=10000" # Increase timeout for GPU operations (10 seconds)
+    "amdgpu.noretry=0" # Enable retries for failed operations
 
     # VPE (Video Processing Engine v6.1) fails to reset during s2idle suspend:
     # "amdgpu: VPE queue reset failed" → causes suspend instability on Strix Point.
@@ -47,6 +47,18 @@
     };
   };
 
+  # Udev rules for AMD GPU stability
+  services.udev.extraRules = ''
+    # AMD Strix Point GPU - Force specific power management settings
+    # Prevents aggressive power state transitions that can trigger MES hangs
+    ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x1002", ATTR{device}=="0x1114", \
+      ATTR{power/control}="on"
+
+    # Keep GPU DRM device always active
+    ACTION=="add", SUBSYSTEM=="drm", KERNEL=="card1", \
+      ATTR{device/power/control}="on"
+  '';
+
   services.power-profiles-daemon.enable = false;
   services.tlp = {
     enable = true;
@@ -72,19 +84,35 @@
       RADEON_DPM_STATE_ON_BAT = "battery";
 
       # PCIe Active State Power Management
-      # Keep GPU PCIe at performance on AC to prevent stability issues
+      # CRITICAL: With amdgpu.runpm=0 (GPU runtime PM disabled), PCIe ASPM must be
+      # conservative to avoid GPU communication issues during suspend/resume cycles.
       PCIE_ASPM_ON_AC = "performance";
-      # powersupersave safe here: amdgpu.runpm=0 already holds GPU state,
-      # no risk of PCIe instability caused by aggressive ASPM on GPU link.
-      PCIE_ASPM_ON_BAT = "powersupersave";
+      # Use 'default' instead of 'powersupersave' on battery to prevent PCIe link
+      # instability with GPU when combined with amdgpu.runpm=0
+      PCIE_ASPM_ON_BAT = "default";
 
-      # USB autosuspend (useful for battery, but exclude input devices)
+      # Runtime Power Management for PCI(e) devices
+      # 'on' = disable runtime PM (compatible with amdgpu.runpm=0)
+      RUNTIME_PM_ON_AC = "on";
+      RUNTIME_PM_ON_BAT = "auto";
+
+      # Exclude AMD GPU from runtime PM (already handled by amdgpu.runpm=0 kernel param)
+      # AMD Strix Point GPU is at PCI address c4:00.0 (0000:c4:00.0)
+      RUNTIME_PM_DENYLIST = "c4:00.0";
+
+      # USB autosuspend (now properly managed without kernel param conflict)
       USB_AUTOSUSPEND = 1;
       USB_EXCLUDE_BTUSB = 1; # Don't suspend Bluetooth
       USB_EXCLUDE_PHONE = 1; # Don't suspend tethered phones
       # Synaptics fingerprint reader (06cb:00f9): loses state after s2idle resume,
       # causing fprintd "device disconnected" errors. Exclude from autosuspend.
-      USB_DENYLIST = "06cb:00f9";
+      # Chicony Integrated Camera (04f2:b840): fails to wake from USB autosuspend,
+      # causing corrupted/frozen video stream in browsers.
+      USB_DENYLIST = "06cb:00f9 04f2:b840";
+
+      # Suspend/Resume optimization for AMD
+      # Restore radio device state after suspend (WiFi/Bluetooth)
+      RESTORE_DEVICE_STATE_ON_STARTUP = 1;
 
       # Battery Charge Thresholds (40-80% for longevity)
       START_CHARGE_THRESH_BAT0 = 40;
