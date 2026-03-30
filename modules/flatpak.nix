@@ -20,7 +20,7 @@
 
       # Common comms/chat (optional - uncomment if needed)
       "org.telegram.desktop"
-      "com.discordapp.Discord"
+      # Discord installed natively via home.nix (better Wayland screen sharing)
       "com.slack.Slack"
       "org.signal.Signal"
 
