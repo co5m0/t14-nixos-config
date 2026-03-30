@@ -73,16 +73,24 @@
       pkgs.xdg-desktop-portal-gtk
     ];
     # Portal backend configuration
-    # IMPORTANT: The Camera portal is NOT implemented by gtk or cosmic backends.
-    # It is handled by xdg-desktop-portal core via PipeWire.
-    # Do NOT assign "Camera" to any backend, or webcam access from browsers will break.
+    # - COSMIC implements: Access, FileChooser, Screenshot, Settings, ScreenCast
+    # - GTK implements: FileChooser, AppChooser, Print, Notification, etc.
+    # - Neither implements OpenURI or Camera — these are handled by
+    #   xdg-desktop-portal core. Use "*" as fallback for unhandled portals.
     config.common = {
-      default = "cosmic";
+      # Fallback: let xdg-desktop-portal handle portals not claimed by any backend
+      # (e.g., OpenURI for Flatpak OAuth flows, Camera via PipeWire)
+      default = "*";
+      # COSMIC-specific portals
       "org.freedesktop.impl.portal.ScreenCast" = "cosmic";
       "org.freedesktop.impl.portal.Screenshot" = "cosmic";
-      # GTK portal as fallback for file chooser, app chooser, etc.
-      "org.freedesktop.impl.portal.FileChooser" = "gtk";
+      "org.freedesktop.impl.portal.Access" = "cosmic";
+      "org.freedesktop.impl.portal.FileChooser" = "cosmic";
+      "org.freedesktop.impl.portal.Settings" = "cosmic";
+      # GTK fallback for portals COSMIC doesn't implement
       "org.freedesktop.impl.portal.AppChooser" = "gtk";
+      "org.freedesktop.impl.portal.Print" = "gtk";
+      "org.freedesktop.impl.portal.Notification" = "gtk";
     };
   };
 

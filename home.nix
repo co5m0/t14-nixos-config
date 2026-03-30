@@ -412,9 +412,11 @@
     };
     Service = {
       Type = "oneshot";
-      # Esegue esattamente il comando che ti ha funzionato a mano
+      # Propagate session environment to systemd/D-Bus user services.
+      # PATH is critical: without it, xdg-desktop-portal can't resolve
+      # Exec= lines in .desktop files → Flatpak "No Apps available" for OAuth.
       ExecStart =
-        "${pkgs.bash}/bin/bash -c '${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY XAUTHORITY WAYLAND_DISPLAY'";
+        "${pkgs.bash}/bin/bash -c '${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY XAUTHORITY WAYLAND_DISPLAY PATH XDG_DATA_DIRS XDG_CURRENT_DESKTOP'";
     };
     Install = { WantedBy = [ "graphical-session.target" ]; };
   };
