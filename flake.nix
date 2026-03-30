@@ -25,10 +25,11 @@
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     opencode.url = "github:GutMutCode/opencode-nix";
+    nordvpn.url = "github:connerohnesorge/nordvpn-flake";
   };
 
   outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, solaar, sops-nix
-    , opencode, ... }@inputs: {
+    , opencode, nordvpn, ... }@inputs: {
       nixosConfigurations = {
         nixos = let
           system = "x86_64-linux";
