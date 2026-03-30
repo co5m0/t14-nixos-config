@@ -12,6 +12,7 @@
       "com.github.tchx84.Flatseal"
       "org.libreoffice.LibreOffice"
       "com.spotify.Client"
+      "com.actualbudget.actual"
 
       # Browsers (sandboxed)
       "org.mozilla.firefox"
