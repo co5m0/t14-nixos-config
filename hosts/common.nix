@@ -20,8 +20,14 @@
       keep-outputs = true;
       keep-derivations = true;
 
+      # Hyprland Cachix (https://wiki.hypr.land/Nix/Cachix/) — the Hyprland
+      # flake isn't built by Hydra, so without this every rebuild compiles
+      # mesa/ffmpeg/Hyprland from source.
       substituters = [
         "https://cache.nixos.org"
+        "https://hyprland.cachix.org"
+      ];
+      trusted-substituters = [
         "https://hyprland.cachix.org"
       ];
       trusted-public-keys = [

@@ -1,14 +1,15 @@
 { inputs, config, lib, pkgs, ... }: {
-  imports = [ inputs.sops-nix.homeManagerModules.sops ];
-
-  sops = {
-    age.keyFile = "/home/co5mo/.config/sops/age/keys.txt";
-    # Keep encrypted secrets out of the public repo; create this file locally.
-    defaultSopsFile = ./secrets/secrets.yaml;
-
-    secrets.github_token = { };
-    secrets.gitlab_token = { };
-  };
+  # sops disabled — re-enable once the age key is in place at
+  # /home/co5mo/.config/sops/age/keys.txt and uncomment all `config.sops.*`
+  # references throughout this file.
+  # imports = [ inputs.sops-nix.homeManagerModules.sops ];
+  #
+  # sops = {
+  #   age.keyFile = "/home/co5mo/.config/sops/age/keys.txt";
+  #   defaultSopsFile = ./secrets/secrets.yaml;
+  #   secrets.github_token = { };
+  #   secrets.gitlab_token = { };
+  # };
   home = {
     username = "co5mo";
     homeDirectory = "/home/co5mo";
@@ -17,11 +18,12 @@
     packages = with pkgs;
       let
         aider-pro = pkgs.writeShellScriptBin "aider-pro" ''
-          TOKEN=$(cat ${config.sops.secrets.github_token.path})
-
-          # Variabili base per l'auth
-          export GITHUB_TOKEN="$TOKEN"
-          export AIDER_GITHUB_COPILOT_API_KEY="$TOKEN"
+          # GITHUB_TOKEN is expected in the environment (sops disabled —
+          # set it manually via shell rc until the age key is restored).
+          if [ -z "''${GITHUB_TOKEN:-}" ]; then
+            echo "aider-pro: GITHUB_TOKEN not set — copilot auth will fail" >&2
+          fi
+          export AIDER_GITHUB_COPILOT_API_KEY="''${GITHUB_TOKEN:-}"
 
           # --- MODEL DEFAULTS (balanced power/cost) ---
           # Default: cheaper + still strong for most coding tasks
@@ -148,14 +150,8 @@
       MOZ_ENABLE_WAYLAND = "1";
     };
 
-    # Session variables that need to read from sops secrets
-    # Note: These are loaded at shell initialization, not at build time
-    sessionVariablesExtra = ''
-      # Expose GitHub token for OpenCode MCP servers (same token used by Aider)
-      if [ -f "${config.sops.secrets.github_token.path}" ]; then
-        export GITHUB_TOKEN="$(cat ${config.sops.secrets.github_token.path})"
-      fi
-    '';
+    # sessionVariablesExtra removed — re-enable alongside the sops block
+    # above when the age key is restored.
 
     # rustup: add cargo and active toolchain binaries to PATH
     # npm global installs
@@ -270,10 +266,6 @@
       nix-direnv.enable = true; # Better caching for Nix
     };
 
-    thunderbird = {
-      enable = true;
-      profiles.co5mo = { isDefault = true; };
-    };
     alacritty = {
       enable = true;
       settings = {
@@ -357,10 +349,7 @@
         # npm global binaries (e.g. copilot)
         export PATH="$HOME/.npm-global/bin:$PATH"
 
-        # Export GitLab Token for glab and gitlab.nvim
-        if [ -f "${config.sops.secrets.gitlab_token.path}" ]; then
-          export GITLAB_TOKEN="$(cat ${config.sops.secrets.gitlab_token.path})"
-        fi
+        # GITLAB_TOKEN export removed — re-enable alongside the sops block.
       '';
     };
 
@@ -390,7 +379,8 @@
   };
   # --- 3. SERVIZI ---
   services.ssh-agent.enable = true;
-  services.network-manager-applet.enable = true;
+  # network-manager-applet removed — it's an X11 tray applet that doesn't
+  # render under Hyprland; DMS provides its own network widget.
 
   # services.gnome-keyring = {
   #   enable = true;

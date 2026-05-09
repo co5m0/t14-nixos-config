@@ -1,6 +1,18 @@
 {
   description = "Nixos config flake — pluto (laptop) + plutovm (manual-install VM)";
 
+  # Hyprland binary cache — applies during `nix build`/`nixos-rebuild` even
+  # before the system-level substituters in hosts/common.nix have been
+  # activated (matters on the very first install).
+  # Per the wiki (https://wiki.hypr.land/Nix/Cachix/) we deliberately do NOT
+  # override hyprland's nixpkgs input — that would defeat the cache.
+  nixConfig = {
+    extra-substituters = [ "https://hyprland.cachix.org" ];
+    extra-trusted-public-keys = [
+      "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+    ];
+  };
+
   inputs = {
     # Single channel: nixos-unstable.
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
@@ -10,7 +22,9 @@
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     # Compositor + shell
-    hyprland.url = "github:hyprwm/Hyprland";
+    # Pinned to a release tag for stable cache hits — `main` would change
+    # between flake updates and force fresh compiles each time.
+    hyprland.url = "github:hyprwm/Hyprland/v0.55.0";
 
     dms.url = "github:AvengeMedia/DankMaterialShell";
     dms.inputs.nixpkgs.follows = "nixpkgs";
