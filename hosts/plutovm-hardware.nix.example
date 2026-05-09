@@ -1,0 +1,13 @@
+# This file is a placeholder. Inside the VM, after installing NixOS, generate
+# the real hardware config and copy it into place:
+#
+#   sudo cp /etc/nixos/hardware-configuration.nix hosts/plutovm-hardware.nix
+#
+# Then rebuild:
+#
+#   sudo nixos-rebuild switch --flake .#plutovm
+#
+# The repo .gitignores hosts/plutovm-hardware.nix so each VM keeps its own
+# without dirty-staging.
+
+{ ... }: { }

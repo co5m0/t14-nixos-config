@@ -5,24 +5,21 @@
   # Addresses MES (Micro Engine Scheduler) ring buffer saturation on Strix Point
 
   # Systemd-logind configuration for proper suspend/hibernate handling
-  services.logind = {
-    lidSwitch = "suspend"; # Suspend when lid closes
-    lidSwitchDocked = "ignore"; # Don't suspend when docked
-    lidSwitchExternalPower = "suspend"; # Suspend even on AC power when lid closes
+  services.logind.settings.Login = {
+    HandleLidSwitch = "suspend";
+    HandleLidSwitchDocked = "ignore";
+    HandleLidSwitchExternalPower = "suspend";
 
-    extraConfig = ''
-      # Suspend settings
-      HandlePowerKey=suspend
-      HandleSuspendKey=suspend
-      HandleHibernateKey=ignore
+    HandlePowerKey = "suspend";
+    HandleSuspendKey = "suspend";
+    HandleHibernateKey = "ignore";
 
-      # Idle settings (let COSMIC handle screen blanking)
-      IdleAction=ignore
-      IdleActionSec=30min
+    # DMS handles screen blanking / idle.
+    IdleAction = "ignore";
+    IdleActionSec = "30min";
 
-      # Don't kill user processes on logout (important for tmux/screen sessions)
-      KillUserProcesses=no
-    '';
+    # Don't kill user processes on logout (tmux/screen sessions).
+    KillUserProcesses = false;
   };
 
   systemd.services.amdgpu-suspend-fix = {

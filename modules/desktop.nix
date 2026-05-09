@@ -1,23 +1,36 @@
 { config, pkgs, ... }:
 
 {
-  # Keyboard layout (applies to both X11 and Wayland)
-  services.xserver.xkb = {
-    layout = "us";
-    variant = "altgr-intl";
+  # --- Compositor (Hyprland nixosModule imported via flake) ---
+  programs.hyprland = {
+    enable = true;
+    withUWSM = true;
+    # Keep XWayland for Electron/legacy apps (Discord, Slack screen-share).
+    xwayland.enable = true;
   };
-  console.useXkbConfig = true; # Use same layout in console
-  # --- BLUETOOTH FIX ---
+
+  programs.dconf.enable = true;
+
+  # tty keymap (no X server)
+  console.keyMap = "us";
+
+  # --- Greeter ---
+  services.greetd = {
+    enable = true;
+    settings = {
+      default_session = {
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd Hyprland";
+        user = "greeter";
+      };
+    };
+  };
+
+  # --- Bluetooth ---
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
   services.blueman.enable = true;
 
-  # --- COSMIC & Display Manager ---
-  services.displayManager.cosmic-greeter.enable = true;
-  services.desktopManager.cosmic.enable = true;
-
-  # --- Audio & Video (PipeWire) ---
-  # Enable rtkit for better real-time audio/video performance
+  # --- Audio (PipeWire) ---
   security.rtkit.enable = true;
 
   services.pipewire = {
@@ -27,13 +40,11 @@
     pulse.enable = true;
     jack.enable = true;
 
-    # Enable wireplumber for device management (including webcams)
     wireplumber = {
       enable = true;
 
-      # Disable libcamera monitor to avoid conflicts with v4l2 webcam access.
-      # WirePlumber 0.5+ uses SPA-JSON config format (wireplumber.conf.d/),
-      # NOT the old Lua main.lua.d/ format from WirePlumber 0.4.
+      # WirePlumber 0.5+ SPA-JSON config; disable libcamera to avoid clashing
+      # with v4l2 webcam access.
       configPackages = [
         (pkgs.writeTextDir "share/wireplumber/wireplumber.conf.d/51-disable-libcamera.conf" ''
           wireplumber.profiles = {
@@ -46,53 +57,38 @@
     };
   };
 
-  # --- GNOME Keyring & Security ---
+  # --- GNOME Keyring ---
   services.gnome.gnome-keyring.enable = true;
-
-  # Enable keyring unlock at login (cosmic-greeter handles this)
+  security.pam.services.greetd.enableGnomeKeyring = true;
   security.pam.services.login.enableGnomeKeyring = true;
-  security.pam.services.cosmic-greeter.enableGnomeKeyring = true;
 
-  # Essential packages for keyring management and webcam testing
   environment.systemPackages = with pkgs; [
     seahorse
     libsecret
     gcr
-    v4l-utils # Webcam testing tools (v4l2-ctl, etc.)
-    libcamera  # Camera support library with testing tools
+    v4l-utils
+    libcamera
+
+    # Hyprland keybind targets
+    grim
+    slurp
+    wl-clipboard
+    cliphist
+    brightnessctl
+    playerctl
+    pamixer
   ];
 
-  # Register gcr on D-Bus
   services.dbus.packages = [ pkgs.gcr ];
 
-  # Portals
+  # --- Portals (Wayland) ---
   xdg.portal = {
     enable = true;
-    extraPortals = [
-      pkgs.xdg-desktop-portal-cosmic
-      pkgs.xdg-desktop-portal-gtk
-    ];
-    # Portal backend configuration
-    # - COSMIC implements: Access, FileChooser, Screenshot, Settings, ScreenCast
-    # - GTK implements: FileChooser, AppChooser, Print, Notification, etc.
-    # - Neither implements OpenURI or Camera — these are handled by
-    #   xdg-desktop-portal core. Use "*" as fallback for unhandled portals.
+    # xdg-desktop-portal-hyprland is added automatically by programs.hyprland.enable.
+    extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
     config.common = {
-      # Fallback: let xdg-desktop-portal handle portals not claimed by any backend
-      # (e.g., OpenURI for Flatpak OAuth flows, Camera via PipeWire)
-      default = "*";
-      # COSMIC-specific portals
-      "org.freedesktop.impl.portal.ScreenCast" = "cosmic";
-      "org.freedesktop.impl.portal.Screenshot" = "cosmic";
-      "org.freedesktop.impl.portal.Access" = "cosmic";
-      "org.freedesktop.impl.portal.FileChooser" = "cosmic";
-      "org.freedesktop.impl.portal.Settings" = "cosmic";
-      # GTK fallback for portals COSMIC doesn't implement
-      "org.freedesktop.impl.portal.AppChooser" = "gtk";
-      "org.freedesktop.impl.portal.Print" = "gtk";
-      "org.freedesktop.impl.portal.Notification" = "gtk";
+      default = [ "hyprland" "gtk" ];
+      "org.freedesktop.impl.portal.FileChooser" = "gtk";
     };
   };
-
-  programs.dconf.enable = true;
 }

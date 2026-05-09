@@ -38,7 +38,7 @@
 
         # Video acceleration (Note: VPE disabled, using software encoding)
         libva-utils # VA-API utilities
-        vaapiVdpau # VA-API to VDPAU translation
+        libva-vdpau-driver # VA-API to VDPAU translation (renamed from vaapiVdpau)
         libvdpau-va-gl # VDPAU support
 
         # Uncomment if you need OpenCL/ROCm support for GPU compute:

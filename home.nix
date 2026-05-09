@@ -1,8 +1,8 @@
-{ inputs, config, lib, pkgs, pkgs-unstable, ... }: {
+{ inputs, config, lib, pkgs, ... }: {
   imports = [ inputs.sops-nix.homeManagerModules.sops ];
 
   sops = {
-    age.keyFile = "/home/js/.config/sops/age/keys.txt";
+    age.keyFile = "/home/co5mo/.config/sops/age/keys.txt";
     # Keep encrypted secrets out of the public repo; create this file locally.
     defaultSopsFile = ./secrets/secrets.yaml;
 
@@ -10,8 +10,8 @@
     secrets.gitlab_token = { };
   };
   home = {
-    username = "js";
-    homeDirectory = "/home/js";
+    username = "co5mo";
+    homeDirectory = "/home/co5mo";
 
     # --- 1. PACCHETTI UTENTE ---
     packages = with pkgs;
@@ -55,7 +55,7 @@
           # --- CONFIGURAZIONE EDITOR DI TESTO (Opzionale) ---
           AIDER_EDITOR="nvim"
 
-          ${pkgs-unstable.aider-chat}/bin/aider \
+          ${pkgs.aider-chat}/bin/aider \
             --model "$AIDER_MODEL" \
             --editor-model "$AIDER_EDITOR_MODEL" \
             --model-settings-file ~/.aider.model.settings.yml \
@@ -83,7 +83,7 @@
 
         # System monitoring
         btop # Modern system monitor (better than htop)
-        nvtopPackages.full # GPU monitor (supports AMD, NVIDIA, Intel)
+        nvtopPackages.amd # GPU monitor (AMD-only build; avoids CUDA closure bloat)
         powertop # Power consumption analysis
 
         # Tool per la Shell (Aggiunti dal tuo .zshrc)
@@ -96,7 +96,7 @@
         (python3.withPackages (p: [ p.ipython ]))
         gh
         github-copilot-cli # Provides: github-copilot-cli, ghcs, ghce aliases
-        pkgs-unstable.glab # GitLab CLI (unstable: >1.66 required)
+        glab # GitLab CLI
 
         tree
         # App
@@ -108,7 +108,7 @@
         # Font di base per una buona copertura Unicode/Emoji
         noto-fonts
         noto-fonts-cjk-sans
-        noto-fonts-emoji
+        noto-fonts-color-emoji
 
         # Icone per barre di stato e applicazioni
         font-awesome
@@ -123,7 +123,7 @@
         # Packages per LazyVim
         statix
         nil
-        nixfmt-classic
+        nixfmt
         mailspring
 
 
@@ -136,10 +136,7 @@
         nixenv # Ephemeral Nix shell environment manager
         ctags # Utile per la repo map di Aider
 
-        pkgs-unstable.aider-chat
-
-        # OpenCode - VSCode alternative
-        opencode
+        aider-chat
         ansible
 
         # Rust toolchain manager (toolchains installed via `rustup` at runtime)
@@ -253,7 +250,19 @@
   programs = {
     ssh = {
       enable = true;
-      addKeysToAgent = "yes";
+      enableDefaultConfig = false;
+      matchBlocks."*" = {
+        addKeysToAgent = "yes";
+        forwardAgent = false;
+        compression = false;
+        serverAliveInterval = 0;
+        serverAliveCountMax = 3;
+        hashKnownHosts = false;
+        userKnownHostsFile = "~/.ssh/known_hosts";
+        controlMaster = "no";
+        controlPath = "~/.ssh/master-%r@%n:%p";
+        controlPersist = "no";
+      };
     };
     direnv = {
       enable = true;
@@ -263,7 +272,7 @@
 
     thunderbird = {
       enable = true;
-      profiles.js = { isDefault = true; };
+      profiles.co5mo = { isDefault = true; };
     };
     alacritty = {
       enable = true;
@@ -294,11 +303,10 @@
     git = {
       enable = true;
       package = pkgs.git.override { withLibsecret = true; };
-      userName = "Juri Sacchetta";
-      userEmail = "jurisacchetta@gmail.com";
-      extraConfig = {
+      settings = {
+        user.name = "co5mo";
+        user.email = "mario@exein.io";
         core.editor = "nvim";
-        # credential.helper = "${pkgs.gh}/bin/gh auth git-credential";
         credential.helper = "libsecret";
         init.defaultBranch = "main";
       };
@@ -313,7 +321,7 @@
 
       shellAliases = {
         cls = "clear";
-        update = "sudo nixos-rebuild switch --flake ~/nixos-config#nixos";
+        update = "sudo nixos-rebuild switch --flake ~/nixos-config#pluto";
         ls = "eza --icons";
         ll = "eza -al --icons";
         lt = "eza -a --tree --level=1 --icons";
@@ -361,9 +369,8 @@
       defaultEditor = true;
       viAlias = true;
       vimAlias = true;
-      # Dipendenze extra per far funzionare Treesitter e Mason (se proprio insisti)
-      # withNodeJs = true; # Già incluso in molti casi, ma male non fa
-      # withPython3 = true;
+      withPython3 = false;
+      withRuby = false;
     };
 
     vscode = {
@@ -396,17 +403,18 @@
   };
 
   # --- 4. STATO ---
-  home.stateVersion = "25.05";
+  home.stateVersion = "25.11";
   programs.home-manager.enable = true;
 
   programs.gh = {
     enable = true;
-    extensions = [ pkgs.gh-copilot ]; # enables: gh copilot suggest / explain
+    # gh-copilot extension was removed from nixpkgs; use the standalone
+    # github-copilot-cli (already in home.packages above) instead.
   };
 
   systemd.user.services.fix-dbus-environment = {
     Unit = {
-      Description = "Fix DBus environment variables for Wayland/Cosmic";
+      Description = "Fix DBus environment variables for Wayland session";
       After = [ "graphical-session.target" ];
       PartOf = [ "graphical-session.target" ];
     };
@@ -416,8 +424,87 @@
       # PATH is critical: without it, xdg-desktop-portal can't resolve
       # Exec= lines in .desktop files → Flatpak "No Apps available" for OAuth.
       ExecStart =
-        "${pkgs.bash}/bin/bash -c '${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY XAUTHORITY WAYLAND_DISPLAY PATH XDG_DATA_DIRS XDG_CURRENT_DESKTOP'";
+        "${pkgs.bash}/bin/bash -c '${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY PATH XDG_DATA_DIRS XDG_CURRENT_DESKTOP'";
     };
     Install = { WantedBy = [ "graphical-session.target" ]; };
   };
+
+  # --- DankMaterialShell (Hyprland shell: bar, launcher, lock, idle, notif, control center, polkit agent) ---
+  programs.dank-material-shell = {
+    enable = true;
+    systemd.enable = true;
+    # All feature toggles default to true:
+    #   enableSystemMonitoring  (dgop)
+    #   enableVPN               (NetworkManager + glib bindings)
+    #   enableDynamicTheming    (matugen — colors GTK/Qt/terminal from wallpaper)
+    #   enableAudioWavelength   (cava)
+    #   enableCalendarEvents    (khal)
+    #   enableClipboardPaste    (wtype)
+  };
+
+  # --- Hyprland (compositor config) ---
+  # System-level enable lives in modules/desktop.nix; this is the user config
+  # consumed by `Hyprland` when launched from greetd.
+  #
+  # Kept deliberately minimal so the v0.54 strict config parser can't trip on
+  # an option whose type tightened. Layer features back in once the VM boots.
+  xdg.configFile."hypr/hyprland.conf".text = ''
+    monitor=,preferred,auto,1
+
+    $mod = SUPER
+
+    input {
+      kb_layout = us
+      kb_variant = altgr-intl
+    }
+
+    general {
+      gaps_in = 4
+      gaps_out = 8
+      border_size = 2
+      layout = dwindle
+    }
+
+    decoration {
+      rounding = 8
+    }
+
+    misc {
+      disable_hyprland_logo = true
+      disable_splash_rendering = true
+    }
+
+    # Core
+    bind = $mod, Return, exec, alacritty
+    bind = $mod, Q, killactive
+    bind = $mod SHIFT, E, exit
+
+    # DMS shell
+    bind = $mod, Space, exec, dms ipc call spotlight toggle
+    bind = $mod, L,     exec, dms ipc call lock lock
+
+    # Window movement
+    bind = $mod, left,  movefocus, l
+    bind = $mod, right, movefocus, r
+    bind = $mod, up,    movefocus, u
+    bind = $mod, down,  movefocus, d
+
+    # Workspaces 1-9
+    bind = $mod, 1, workspace, 1
+    bind = $mod, 2, workspace, 2
+    bind = $mod, 3, workspace, 3
+    bind = $mod, 4, workspace, 4
+    bind = $mod, 5, workspace, 5
+    bind = $mod, 6, workspace, 6
+    bind = $mod, 7, workspace, 7
+    bind = $mod, 8, workspace, 8
+    bind = $mod, 9, workspace, 9
+
+    bindm = $mod, mouse:272, movewindow
+    bindm = $mod, mouse:273, resizewindow
+  '';
+
+  # GTK theming — DMS's matugen integration writes color overrides; this just
+  # turns the GTK module on so home-manager wires xdg paths correctly.
+  gtk.enable = true;
 }
