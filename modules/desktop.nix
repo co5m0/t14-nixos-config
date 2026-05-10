@@ -2,11 +2,28 @@
 
 {
   # --- Compositor (Hyprland nixosModule imported via flake) ---
+  # Native session launch (no UWSM): Hyprland is started directly from
+  # `hyprland.desktop`. Hyprland's exec-once handshake (see
+  # ./home/hyprland/default.nix) propagates session env into systemd --user
+  # and activates `hyprland-session.target`, which in turn binds
+  # `graphical-session.target` so DMS and other user services start.
   programs.hyprland = {
     enable = true;
-    withUWSM = true;
     # Keep XWayland for Electron/legacy apps (Discord, Slack screen-share).
     xwayland.enable = true;
+  };
+
+  services.displayManager.defaultSession = "hyprland";
+
+  # --- DankMaterialShell (system-wide install per upstream docs) ---
+  # Provides bar, launcher, lock, idle, notifications, control center,
+  # polkit agent. Quickshell configs live at /etc/xdg/quickshell/dms.
+  # Feature toggles (enableSystemMonitoring, enableVPN, enableDynamicTheming,
+  # enableAudioWavelength, enableCalendarEvents, enableClipboardPaste) all
+  # default to true.
+  programs.dank-material-shell = {
+    enable = true;
+    systemd.enable = true;
   };
 
   programs.dconf.enable = true;
@@ -15,18 +32,34 @@
   console.keyMap = "us";
 
   # --- Greeter ---
-  # tuigreet reads .desktop files from the standard Wayland sessions dir and
-  # execs the chosen file's Exec= line — same pattern as GDM/SDDM. With
-  # withUWSM=true above, this picks up `hyprland-uwsm.desktop` which wraps
-  # the session in UWSM, so graphical-session.target activates and DMS starts.
-  # `--remember-session` makes the first pick stick on subsequent logins.
+  # tuigreet reads .desktop files from XDG_DATA_DIRS and execs the chosen
+  # file's Exec= line. `--remember-session` makes the first pick stick on
+  # subsequent logins.
   services.greetd = {
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions /run/current-system/sw/share/wayland-sessions";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session";
         user = "greeter";
       };
+    };
+  };
+
+  # --- Polkit auth agent ---
+  # Anchored to hyprland-session.target (same rationale as
+  # fix-dbus-environment in home.nix): under a native Hyprland launch,
+  # graphical-session.target is reached transitively.
+  systemd.user.services.hyprpolkitagent = {
+    description = "Hyprpolkitagent — polkit authentication agent";
+    wantedBy = [ "hyprland-session.target" ];
+    wants    = [ "hyprland-session.target" ];
+    after    = [ "hyprland-session.target" ];
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = "${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent";
+      Restart = "on-failure";
+      RestartSec = 1;
+      TimeoutStopSec = 10;
     };
   };
 

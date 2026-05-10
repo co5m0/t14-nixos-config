@@ -6,6 +6,8 @@
   ...
 }:
 {
+  imports = [ ./hyprland ];
+
   # sops disabled — re-enable once the age key is in place at
   # /home/co5mo/.config/sops/age/keys.txt and uncomment all `config.sops.*`
   # references throughout this file.
@@ -26,7 +28,7 @@
       with pkgs;
       let
         # nixenv - Ephemeral Nix shell environment manager
-        nixenv = pkgs.writeShellScriptBin "nixenv" (builtins.readFile ./scripts/nixenv);
+        nixenv = pkgs.writeShellScriptBin "nixenv" (builtins.readFile ../scripts/nixenv);
 
       in
       [
@@ -124,10 +126,10 @@
   };
 
   # nixenv environment templates
-  home.file.".config/nixenv/envs/pwn.nix".source = ./scripts/nixenv-templates/pwn.nix;
-  home.file.".config/nixenv/envs/web.nix".source = ./scripts/nixenv-templates/web.nix;
-  home.file.".config/nixenv/envs/rev.nix".source = ./scripts/nixenv-templates/rev.nix;
-  home.file.".config/nixenv/envs/crypto.nix".source = ./scripts/nixenv-templates/crypto.nix;
+  home.file.".config/nixenv/envs/pwn.nix".source = ../scripts/nixenv-templates/pwn.nix;
+  home.file.".config/nixenv/envs/web.nix".source = ../scripts/nixenv-templates/web.nix;
+  home.file.".config/nixenv/envs/rev.nix".source = ../scripts/nixenv-templates/rev.nix;
+  home.file.".config/nixenv/envs/crypto.nix".source = ../scripts/nixenv-templates/crypto.nix;
 
   home.file.".tmux.conf" = {
     source = "${inputs.oh-my-tmux}/.tmux.conf";
@@ -303,8 +305,11 @@
   systemd.user.services.fix-dbus-environment = {
     Unit = {
       Description = "Fix DBus environment variables for Wayland session";
-      After = [ "graphical-session.target" ];
-      PartOf = [ "graphical-session.target" ];
+      # Bound to hyprland-session.target (not graphical-session.target) because
+      # native Hyprland (no UWSM) only reaches graphical-session.target *via*
+      # hyprland-session.target — anchoring one rung lower avoids a cycle.
+      After = [ "hyprland-session.target" ];
+      PartOf = [ "hyprland-session.target" ];
     };
     Service = {
       Type = "oneshot";
@@ -314,84 +319,15 @@
       ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY PATH XDG_DATA_DIRS XDG_CURRENT_DESKTOP'";
     };
     Install = {
-      WantedBy = [ "graphical-session.target" ];
+      WantedBy = [ "hyprland-session.target" ];
     };
   };
 
-  # --- DankMaterialShell (Hyprland shell: bar, launcher, lock, idle, notif, control center, polkit agent) ---
-  programs.dank-material-shell = {
-    enable = true;
-    systemd.enable = true;
-    # All feature toggles default to true:
-    #   enableSystemMonitoring  (dgop)
-    #   enableVPN               (NetworkManager + glib bindings)
-    #   enableDynamicTheming    (matugen — colors GTK/Qt/terminal from wallpaper)
-    #   enableAudioWavelength   (cava)
-    #   enableCalendarEvents    (khal)
-    #   enableClipboardPaste    (wtype)
-  };
+  # DankMaterialShell is installed system-wide via the NixOS module
+  # (see modules/desktop.nix). Configs land in /etc/xdg/quickshell/dms.
 
-  # --- Hyprland (compositor config) ---
-  # System-level enable lives in modules/desktop.nix; this is the user config
-  # consumed by `Hyprland` when launched from greetd.
-  #
-  # Kept deliberately minimal so the v0.54 strict config parser can't trip on
-  # an option whose type tightened. Layer features back in once the VM boots.
-  xdg.configFile."hypr/hyprland.conf".text = ''
-    monitor=,preferred,auto,1
-
-    $mod = SUPER
-
-    input {
-      kb_layout = us
-      kb_variant = altgr-intl
-    }
-
-    general {
-      gaps_in = 4
-      gaps_out = 8
-      border_size = 2
-      layout = dwindle
-    }
-
-    decoration {
-      rounding = 8
-    }
-
-    misc {
-      disable_hyprland_logo = true
-      disable_splash_rendering = true
-    }
-
-    # Core
-    bind = $mod, Return, exec, alacritty
-    bind = $mod, Q, killactive
-    bind = $mod SHIFT, E, exit
-
-    # DMS shell
-    bind = $mod, Space, exec, dms ipc call spotlight toggle
-    bind = $mod, L,     exec, dms ipc call lock lock
-
-    # Window movement
-    bind = $mod, left,  movefocus, l
-    bind = $mod, right, movefocus, r
-    bind = $mod, up,    movefocus, u
-    bind = $mod, down,  movefocus, d
-
-    # Workspaces 1-9
-    bind = $mod, 1, workspace, 1
-    bind = $mod, 2, workspace, 2
-    bind = $mod, 3, workspace, 3
-    bind = $mod, 4, workspace, 4
-    bind = $mod, 5, workspace, 5
-    bind = $mod, 6, workspace, 6
-    bind = $mod, 7, workspace, 7
-    bind = $mod, 8, workspace, 8
-    bind = $mod, 9, workspace, 9
-
-    bindm = $mod, mouse:272, movewindow
-    bindm = $mod, mouse:273, resizewindow
-  '';
+  # Hyprland user config lives in ./hyprland (declarative attrset via
+  # wayland.windowManager.hyprland.settings, split into hyprland.nix + binds.nix).
 
   # GTK theming — DMS's matugen integration writes color overrides; this just
   # turns the GTK module on so home-manager wires xdg paths correctly.

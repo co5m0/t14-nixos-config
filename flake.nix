@@ -26,7 +26,9 @@
     # between flake updates and force fresh compiles each time.
     hyprland.url = "github:hyprwm/Hyprland/v0.55.0";
 
-    dms.url = "github:AvengeMedia/DankMaterialShell";
+    # Pinned to /stable per upstream NixOS-flake docs:
+    # https://danklinux.com/docs/dankmaterialshell/nixos-flake
+    dms.url = "github:AvengeMedia/DankMaterialShell/stable";
     dms.inputs.nixpkgs.follows = "nixpkgs";
 
     zen-browser.url = "github:0xc000022070/zen-browser-flake";
@@ -58,17 +60,18 @@
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "backup";
-          home-manager.users.co5mo = import ./home.nix;
+          home-manager.users.co5mo = import ./home;
           home-manager.extraSpecialArgs = {
             inherit inputs;
           };
-          home-manager.sharedModules = [
-            dms.homeModules.dank-material-shell
-          ];
         }
 
         inputs.nix-flatpak.nixosModules.nix-flatpak
         hyprland.nixosModules.default
+
+        # System-wide DankMaterialShell — places quickshell configs in
+        # /etc/xdg/quickshell/dms (per upstream docs).
+        dms.nixosModules.dank-material-shell
       ];
 
       mkHost = hostModule: nixpkgs.lib.nixosSystem {
