@@ -26,10 +26,6 @@
     settings.PasswordAuthentication = true;
   };
 
-  # Auto-login co5mo straight into Hyprland — no password challenge in VM.
-  services.greetd.settings.default_session.command = lib.mkForce
-    "${pkgs.tuigreet}/bin/tuigreet --time --remember --user-menu --cmd Hyprland";
-
   # Initial password (used at first activation; change with `passwd` after first login).
   users.users.co5mo.initialPassword = "plutovm";
 

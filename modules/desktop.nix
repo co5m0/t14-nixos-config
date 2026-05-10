@@ -15,11 +15,16 @@
   console.keyMap = "us";
 
   # --- Greeter ---
+  # tuigreet reads .desktop files from the standard Wayland sessions dir and
+  # execs the chosen file's Exec= line — same pattern as GDM/SDDM. With
+  # withUWSM=true above, this picks up `hyprland-uwsm.desktop` which wraps
+  # the session in UWSM, so graphical-session.target activates and DMS starts.
+  # `--remember-session` makes the first pick stick on subsequent logins.
   services.greetd = {
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd Hyprland";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions /run/current-system/sw/share/wayland-sessions";
         user = "greeter";
       };
     };

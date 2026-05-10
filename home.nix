@@ -1,4 +1,11 @@
-{ inputs, config, lib, pkgs, ... }: {
+{
+  inputs,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+{
   # sops disabled — re-enable once the age key is in place at
   # /home/co5mo/.config/sops/age/keys.txt and uncomment all `config.sops.*`
   # references throughout this file.
@@ -15,63 +22,14 @@
     homeDirectory = "/home/co5mo";
 
     # --- 1. PACCHETTI UTENTE ---
-    packages = with pkgs;
+    packages =
+      with pkgs;
       let
-        aider-pro = pkgs.writeShellScriptBin "aider-pro" ''
-          # GITHUB_TOKEN is expected in the environment (sops disabled —
-          # set it manually via shell rc until the age key is restored).
-          if [ -z "''${GITHUB_TOKEN:-}" ]; then
-            echo "aider-pro: GITHUB_TOKEN not set — copilot auth will fail" >&2
-          fi
-          export AIDER_GITHUB_COPILOT_API_KEY="''${GITHUB_TOKEN:-}"
-
-          # --- MODEL DEFAULTS (balanced power/cost) ---
-          # Default: cheaper + still strong for most coding tasks
-          AIDER_MODEL="github_copilot/claude-sonnet-4.5"
-          AIDER_EDITOR_MODEL="github_copilot/claude-haiku-4.5"
-
-          # Build optional flags
-          EXTRA_FLAGS=""
-
-          # Opt-in "max power" when needed:
-          #   AIDER_POWER=1 aider-pro ...
-          if [ "''${AIDER_POWER:-0}" = "1" ]; then
-            AIDER_MODEL="github_copilot/gpt-5.2"
-            AIDER_EDITOR_MODEL="github_copilot/claude-haiku-4.5"
-            echo "Mode: GitHub Copilot Business (MAX POWER)"
-          else
-            echo "Mode: GitHub Copilot Business (Balanced)"
-          fi
-
-          # Opt-in architect mode (expensive, two-stage planning):
-          #   AIDER_ARCHITECT=1 aider-pro ...
-          if [ "''${AIDER_ARCHITECT:-0}" = "1" ]; then
-            EXTRA_FLAGS="$EXTRA_FLAGS --architect --map-refresh manual"
-            echo "  + Architect mode enabled (expensive, manual map refresh)"
-          fi
-
-          # Opt-in watch-files mode (continuous monitoring):
-          #   aider-pro --watch-files ...
-          # Note: --watch-files is passed through "$@" if user specifies it
-
-          # --- CONFIGURAZIONE EDITOR DI TESTO (Opzionale) ---
-          AIDER_EDITOR="nvim"
-
-          ${pkgs.aider-chat}/bin/aider \
-            --model "$AIDER_MODEL" \
-            --editor-model "$AIDER_EDITOR_MODEL" \
-            --model-settings-file ~/.aider.model.settings.yml \
-            --cache-prompts \
-            --auto-lint \
-            $EXTRA_FLAGS \
-            "$@"
-        '';
-
         # nixenv - Ephemeral Nix shell environment manager
-        nixenv = pkgs.writeShellScriptBin "nixenv"
-          (builtins.readFile ./scripts/nixenv);
+        nixenv = pkgs.writeShellScriptBin "nixenv" (builtins.readFile ./scripts/nixenv);
 
-      in [
+      in
+      [
         # Core
         tmux
         dnsutils
@@ -97,14 +55,12 @@
         nodejs_22
         (python3.withPackages (p: [ p.ipython ]))
         gh
-        github-copilot-cli # Provides: github-copilot-cli, ghcs, ghce aliases
-        glab # GitLab CLI
 
         tree
         # App
         fastfetch # System info (modern neofetch replacement)
         inputs.zen-browser.packages."${pkgs.system}".default
-        discord # Installato a livello utente (non Flatpak)
+        lecord # Installato a livello utente (non Flatpak)
 
         # --- FONT ---
         # Font di base per una buona copertura Unicode/Emoji
@@ -128,18 +84,10 @@
         nixfmt
         mailspring
 
-
-        zed
-
         man-pages
         man-pages-posix
 
-        aider-pro
         nixenv # Ephemeral Nix shell environment manager
-        ctags # Utile per la repo map di Aider
-
-        aider-chat
-        ansible
 
         # Rust toolchain manager (toolchains installed via `rustup` at runtime)
         rustup
@@ -176,14 +124,10 @@
   };
 
   # nixenv environment templates
-  home.file.".config/nixenv/envs/pwn.nix".source =
-    ./scripts/nixenv-templates/pwn.nix;
-  home.file.".config/nixenv/envs/web.nix".source =
-    ./scripts/nixenv-templates/web.nix;
-  home.file.".config/nixenv/envs/rev.nix".source =
-    ./scripts/nixenv-templates/rev.nix;
-  home.file.".config/nixenv/envs/crypto.nix".source =
-    ./scripts/nixenv-templates/crypto.nix;
+  home.file.".config/nixenv/envs/pwn.nix".source = ./scripts/nixenv-templates/pwn.nix;
+  home.file.".config/nixenv/envs/web.nix".source = ./scripts/nixenv-templates/web.nix;
+  home.file.".config/nixenv/envs/rev.nix".source = ./scripts/nixenv-templates/rev.nix;
+  home.file.".config/nixenv/envs/crypto.nix".source = ./scripts/nixenv-templates/crypto.nix;
 
   home.file.".tmux.conf" = {
     source = "${inputs.oh-my-tmux}/.tmux.conf";
@@ -192,56 +136,9 @@
 
   home.file.".tmux.conf.local" = {
     source = "${inputs.oh-my-tmux}/.tmux.conf.local";
-    # Copia questo file in modo che tu possa modificarlo localmente 
+    # Copia questo file in modo che tu possa modificarlo localmente
     # (o Home Manager lo creerà se non esiste)
   };
-
-  # Configurazione persistente di Aider
-  home.file.".aider.conf.yml".text = ''
-    # --- UI & Aspetto ---
-    dark-mode: true
-    pretty: true
-    stream: true
-
-    # Reduced to 768 for better cost/benefit ratio (~25% savings vs 1024)
-    # Sufficient for most projects while keeping context quality high
-    map-tokens: 768
-
-    # --- Cost Controls ---
-    # Explicitly disable features that increase token usage
-    auto-commits: false
-    attribute-author: false
-    attribute-committer: false
-    attribute-commit-message-author: false
-    attribute-commit-message-committer: false
-
-    check-update: false
-    show-model-warnings: false
-
-    # --- Quality & Caching ---
-    # Maximize cache hits - no keepalive pings waste tokens
-    cache-keepalive-pings: 0
-
-    # Only refresh map when explicitly needed (--map-refresh flag)
-    # Default behavior refreshes on every file change = wasted tokens
-    map-refresh: auto
-
-    # Free quality improvements - run local checks before consuming tokens
-    # Manual control to avoid surprise costs in scripts
-    lint-cmd: "nix flake check 2>&1 || true"
-    auto-lint: false
-
-  '';
-  home.file.".aider.model.settings.yml".text = ''
-    # Apply these headers to ALL models automatically
-    - name: aider/extra_params
-      extra_params:
-        extra_headers:
-          Editor-Version: "vscode/1.96.2"
-          Editor-Plugin-Version: "copilot/1.256.0"
-          User-Agent: "GithubCopilot/1.256.0"
-          Copilot-Integration-Id: "vscode-chat"
-  '';
 
   programs = {
     ssh = {
@@ -277,10 +174,14 @@
           opacity = 0.98;
         };
 
-        scrolling = { history = 10000; };
+        scrolling = {
+          history = 10000;
+        };
 
         font = {
-          normal = { family = "MesloLGS Nerd Font"; };
+          normal = {
+            family = "MesloLGS Nerd Font";
+          };
           size = 11.0;
           offset = {
             x = 0;
@@ -288,7 +189,9 @@
           };
         };
 
-        bell = { duration = 0; };
+        bell = {
+          duration = 0;
+        };
       };
     };
 
@@ -321,14 +224,6 @@
         spotify = "flatpak run com.spotify.Client";
         firefox = "flatpak run org.mozilla.firefox";
         chromium = "flatpak run org.chromium.Chromium";
-
-        # Aider workflow aliases
-        ai = "aider-pro"; # Quick access, balanced mode
-        aip = "AIDER_POWER=1 aider-pro"; # Power mode (GPT-5.2)
-        aia = "AIDER_ARCHITECT=1 aider-pro"; # Architect mode only
-        aipa =
-          "AIDER_POWER=1 AIDER_ARCHITECT=1 aider-pro"; # Maximum power + architect
-        aiw = "aider-pro --watch-files"; # Watch mode for live file monitoring
       };
 
       history = {
@@ -338,7 +233,10 @@
 
       oh-my-zsh = {
         enable = true;
-        plugins = [ "git" "sudo" ];
+        plugins = [
+          "git"
+          "sudo"
+        ];
       };
 
       # Powerlevel10k theme (loaded after oh-my-zsh)
@@ -413,10 +311,11 @@
       # Propagate session environment to systemd/D-Bus user services.
       # PATH is critical: without it, xdg-desktop-portal can't resolve
       # Exec= lines in .desktop files → Flatpak "No Apps available" for OAuth.
-      ExecStart =
-        "${pkgs.bash}/bin/bash -c '${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY PATH XDG_DATA_DIRS XDG_CURRENT_DESKTOP'";
+      ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY PATH XDG_DATA_DIRS XDG_CURRENT_DESKTOP'";
     };
-    Install = { WantedBy = [ "graphical-session.target" ]; };
+    Install = {
+      WantedBy = [ "graphical-session.target" ];
+    };
   };
 
   # --- DankMaterialShell (Hyprland shell: bar, launcher, lock, idle, notif, control center, polkit agent) ---
