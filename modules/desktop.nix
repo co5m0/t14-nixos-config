@@ -115,6 +115,12 @@
     brightnessctl
     playerctl
     pamixer
+
+    # Default terminal (referenced by hyprland Super+Return)
+    ghostty
+
+    # Kubernetes helper (system-wide so root can use it too)
+    kubernetes-helm
   ];
 
   services.dbus.packages = [ pkgs.gcr ];

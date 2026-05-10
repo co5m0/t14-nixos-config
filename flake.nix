@@ -43,6 +43,13 @@
 
     sops-nix.url = "github:Mic92/sops-nix";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+
+    # Dagger CLI (containerized CI/CD)
+    dagger.url = "github:dagger/nix";
+    dagger.inputs.nixpkgs.follows = "nixpkgs";
+
+    # numtide LLM-agent packaged CLIs (provides `pi`)
+    llm-agents.url = "github:numtide/llm-agents.nix";
   };
 
   outputs = { self, nixpkgs, home-manager, sops-nix, hyprland, dms, ... }@inputs:

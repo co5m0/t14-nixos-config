@@ -19,127 +19,174 @@
   #   secrets.github_token = { };
   #   secrets.gitlab_token = { };
   # };
+
   home = {
     username = "co5mo";
     homeDirectory = "/home/co5mo";
 
-    # --- 1. PACCHETTI UTENTE ---
-    packages =
-      with pkgs;
-      let
-        # nixenv - Ephemeral Nix shell environment manager
-        nixenv = pkgs.writeShellScriptBin "nixenv" (builtins.readFile ../scripts/nixenv);
+    packages = with pkgs; [
+      # --- Core CLI ---
+      tmux
+      dnsutils
+      wget
+      curl
+      unzip
+      ripgrep
+      fd
+      wl-clipboard
+      jq
+      yq
+      tree
+      delta
+      nnn
+      yazi
 
-      in
-      [
-        # Core
-        tmux
-        dnsutils
-        wget
-        curl
-        unzip
-        ripgrep
-        fd
-        wl-clipboard
-        jq
+      # --- System monitoring ---
+      btop
+      nvtopPackages.amd
+      powertop
+      fastfetch
 
-        # System monitoring
-        btop # Modern system monitor (better than htop)
-        nvtopPackages.amd # GPU monitor (AMD-only build; avoids CUDA closure bloat)
-        powertop # Power consumption analysis
+      # --- Shell helpers ---
+      eza
+      bat
 
-        # Tool per la Shell (Aggiunti dal tuo .zshrc)
-        eza # Per gli alias ls, ll, lt
-        bat # Per le funzioni di preview
+      # --- Languages / toolchains ---
+      nodejs_22
+      corepack_24
+      typescript
+      go
+      gopls
+      rust-analyzer
+      rustup
+      uv
+      lua-language-server
+      yaml-language-server
+      (python3.withPackages (p: [ p.ipython ]))
 
-        sops
-        nix-direnv
-        nodejs_22
-        (python3.withPackages (p: [ p.ipython ]))
-        gh
+      # --- Nix tooling ---
+      sops
+      nil
+      nixfmt
+      statix
 
-        tree
-        # App
-        fastfetch # System info (modern neofetch replacement)
-        inputs.zen-browser.packages."${pkgs.system}".default
-        lecord # Installato a livello utente (non Flatpak)
+      # --- Cloud / infra ---
+      awscli2
+      aws-vault
+      ssm-session-manager-plugin
+      pulumi-bin
 
-        # --- FONT ---
-        # Font di base per una buona copertura Unicode/Emoji
-        noto-fonts
-        noto-fonts-cjk-sans
-        noto-fonts-color-emoji
+      # --- Kubernetes ---
+      kubectl
+      k9s
+      kind
 
-        # Icone per barre di stato e applicazioni
-        font-awesome
+      # --- TUI dev ---
+      gh
+      lazygit
+      lazydocker
+      lazysql
 
-        # Nerd Fonts (Cruciali per P10K e Neovim)
-        # Usa il namespace 'nerd-fonts' per installare solo quelli che ti servono
-        nerd-fonts.jetbrains-mono # Ottimo per il coding
-        nerd-fonts.fira-code # Altra ottima scelta con legature
-        nerd-fonts.meslo-lg # Raccomandato ufficialmente da Powerlevel10k
-        nerd-fonts.symbols-only # Se vuoi solo le icone
+      # --- LLM CLIs ---
+      gemini-cli-bin
+      inputs.llm-agents.packages.${pkgs.system}.pi
+      inputs.dagger.packages.${pkgs.system}.dagger
 
-        # Packages per LazyVim
-        statix
-        nil
-        nixfmt
-        mailspring
+      # --- Editor ---
+      # Bare neovim (no HM module): init.lua + lazy.nvim manage plugins at
+      # runtime. See xdg.configFile."nvim/*" below.
+      neovim
 
-        man-pages
-        man-pages-posix
+      # --- Apps ---
+      inputs.zen-browser.packages.${pkgs.system}.default
+      legcord
+      mailspring
+      rtk
+      fence
 
-        nixenv # Ephemeral Nix shell environment manager
+      # --- Fonts ---
+      noto-fonts
+      noto-fonts-cjk-sans
+      noto-fonts-color-emoji
+      font-awesome
+      nerd-fonts.jetbrains-mono
+      nerd-fonts.fira-code
+      nerd-fonts.meslo-lg
+      nerd-fonts.symbols-only
 
-        # Rust toolchain manager (toolchains installed via `rustup` at runtime)
-        rustup
-      ];
+      # --- Manpages ---
+      man-pages
+      man-pages-posix
+    ];
+
     sessionVariables = {
-      # Forza le app Electron a usare Wayland nativo (risparmio CPU/Batteria)
+      # Wayland / Electron
       NIXOS_OZONE_WL = "1";
       MOZ_ENABLE_WAYLAND = "1";
+
+      # Locale + editors (ported from ~/.nix/home-manager.nix)
+      LANG = "en_US.UTF-8";
+      LC_CTYPE = "en_US.UTF-8";
+      LC_ALL = "en_US.UTF-8";
+      EDITOR = "nvim";
+      PAGER = "less -FirSwX";
+      MANPAGER = "sh -c 'col -bx | bat -l man -p'";
     };
 
-    # sessionVariablesExtra removed — re-enable alongside the sops block
-    # above when the age key is restored.
-
-    # rustup: add cargo and active toolchain binaries to PATH
-    # npm global installs
+    # cargo + npm-global + flutter on PATH
     sessionPath = [
       "$HOME/.cargo/bin"
       "$HOME/.npm-global/bin"
+      "$HOME/.local/share/flutter/bin"
     ];
 
     activation.installNpmGlobalPackages = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       $DRY_RUN_CMD ${pkgs.nodejs_22}/bin/npm install -g --prefix "$HOME/.npm-global" @github/copilot 2>&1 | tail -3
     '';
-  };
 
-  xdg.mimeApps = {
-    enable = true;
-    defaultApplications = {
-      "x-scheme-handler/http" = [ "zen-beta.desktop" ];
-      "x-scheme-handler/https" = [ "zen-beta.desktop" ];
-      "text/html" = [ "zen-beta.desktop" ];
-      "application/xhtml+xml" = [ "zen-beta.desktop" ];
+    file = {
+      ".tmux.conf".source = "${inputs.oh-my-tmux}/.tmux.conf";
+      ".tmux.conf.local".source = ./tmux/conf.local;
+      ".config/xdg-terminals.list".source = ./xdg-terminals.list;
     };
+
+    stateVersion = "25.11";
   };
 
-  # nixenv environment templates
-  home.file.".config/nixenv/envs/pwn.nix".source = ../scripts/nixenv-templates/pwn.nix;
-  home.file.".config/nixenv/envs/web.nix".source = ../scripts/nixenv-templates/web.nix;
-  home.file.".config/nixenv/envs/rev.nix".source = ../scripts/nixenv-templates/rev.nix;
-  home.file.".config/nixenv/envs/crypto.nix".source = ../scripts/nixenv-templates/crypto.nix;
+  # --- Raw config files ported from ~/.config ---
+  xdg.configFile = {
+    "btop/btop.conf".source = ./btop/btop.conf;
+    "k9s/config.yaml".source = ./k9s/config.yaml;
+    "lazygit/config.yml".source = ./lazygit/config.yml;
+    "yazi/yazi.toml".source = ./yazi/yazi.toml;
+    "gh/config.yml".source = ./gh/config.yml;
+    "gh-dash/config.yml".source = ./gh-dash/config.yml;
+    "fontconfig/fonts.conf".source = ./fontconfig/fonts.conf;
 
-  home.file.".tmux.conf" = {
-    source = "${inputs.oh-my-tmux}/.tmux.conf";
-    # Rendi la copia gestita da Nix. Non modificarla direttamente.
-  };
+    # Recursive: ghostty config + shaders subdir
+    "ghostty" = {
+      source = ./ghostty;
+      recursive = true;
+    };
 
-  home.file.".tmux.conf.local" = {
-    source = "${inputs.oh-my-tmux}/.tmux.conf.local";
-    # Copia questo file in modo che tu possa modificarlo localmente
-    # (o Home Manager lo creerà se non esiste)
+    # Vicinae app launcher (legacy from Omarchy; runs via exec-once in hyprland)
+    "vicinae/settings.json".source = ./vicinae/settings.json;
+    "vicinae/vicinae.json".source = ./vicinae/vicinae.json;
+
+    # Neovim — recursive deploy. lazy.nvim bootstraps from init.lua at first
+    # launch and pulls plugins per lazy-lock.json. .neoconf.json is the
+    # neoconf.nvim per-project LSP config schema. Conductor markdown files
+    # are user notes (kept alongside config).
+    "nvim" = {
+      source = ./nvim;
+      recursive = true;
+    };
+
+    # Hyprland clamshell-mode script (referenced by bindl in hyprland binds)
+    "hypr/clamshell_mode.sh" = {
+      source = ./hypr/clamshell_mode.sh;
+      executable = true;
+    };
   };
 
   programs = {
@@ -159,73 +206,74 @@
         controlPersist = "no";
       };
     };
-    direnv = {
-      enable = true;
-      enableZshIntegration = true; # Hooks into your Zsh automatically
-      nix-direnv.enable = true; # Better caching for Nix
-    };
-
-    alacritty = {
-      enable = true;
-      settings = {
-        window = {
-          padding = {
-            x = 0;
-            y = 0;
-          };
-          opacity = 0.98;
-        };
-
-        scrolling = {
-          history = 10000;
-        };
-
-        font = {
-          normal = {
-            family = "MesloLGS Nerd Font";
-          };
-          size = 11.0;
-          offset = {
-            x = 0;
-            y = 0;
-          };
-        };
-
-        bell = {
-          duration = 0;
-        };
-      };
-    };
 
     git = {
       enable = true;
       package = pkgs.git.override { withLibsecret = true; };
+
       settings = {
+        alias = {
+          co = "checkout";
+          br = "branch";
+          ci = "commit";
+          st = "status";
+        };
+
         user.name = "co5mo";
-        user.email = "mario@exein.io";
+        user.email = "marioconsalvo1@gmail.com";
         core.editor = "nvim";
         credential.helper = "libsecret";
-        init.defaultBranch = "main";
+        init.defaultBranch = "master";
+
+        pull.rebase = true;
+        push.autoSetupRemote = true;
+
+        diff = {
+          algorithm = "histogram";
+          colorMoved = "plain";
+          mnemonicPrefix = true;
+        };
+        commit.verbose = true;
+        column.ui = "auto";
+        branch.sort = "-committerdate";
+        tag.sort = "-version:refname";
+        rerere = {
+          enabled = true;
+          autoupdate = true;
+        };
       };
     };
+
     zsh = {
       enable = true;
       enableCompletion = true;
-
-      # Fast native plugins (better than Oh My Zsh alternatives)
       autosuggestion.enable = true;
       syntaxHighlighting.enable = true;
+      dotDir = "${config.xdg.configHome}/zsh";
 
       shellAliases = {
+        # Aliases ported from ~/.nix/home-manager.nix
+        ll = "ls -l";
+        la = "ls -a";
+        update = "sudo nixos-rebuild switch --flake ~/git/co5mo/t14-nixos-config#pluto";
+        switch = "nix run nixpkgs#home-manager -- switch --flake ~/git/co5mo/t14-nixos-config#co5mo";
+        rless = "less -r";
+        vim = "nvim";
+        vi = "nvim";
+        tf = "terraform";
+        k = "kubectl";
+        lgit = "lazygit";
+        lsql = "lazysql";
+        ldocker = "lazydocker";
+        grep = "rg";
         cls = "clear";
-        update = "sudo nixos-rebuild switch --flake ~/nixos-config#pluto";
-        ls = "eza --icons";
-        ll = "eza -al --icons";
-        lt = "eza -a --tree --level=1 --icons";
-        cd = "z";
-        spotify = "flatpak run com.spotify.Client";
-        firefox = "flatpak run org.mozilla.firefox";
-        chromium = "flatpak run org.chromium.Chromium";
+      };
+
+      sessionVariables = {
+        EDITOR = "nvim";
+        TERMINFO = "$HOME/.terminfo";
+        TERM = "xterm-256color";
+        NNN_FCOLORS = "D4DEB778E79F9F67D2E5E5D2";
       };
 
       history = {
@@ -235,31 +283,58 @@
 
       oh-my-zsh = {
         enable = true;
+        theme = "agnoster";
         plugins = [
           "git"
-          "sudo"
+          "docker"
+          "aws"
+          "extract"
+          "terraform"
+          "gh"
+          "vi-mode"
+          "fzf"
+          "kubectl"
         ];
+        extraConfig = ''
+          PROMPT="$PROMPT\$(vi_mode_prompt_info)"
+          RPROMPT="\$(vi_mode_prompt_info)$RPROMPT"
+        '';
       };
 
-      # Powerlevel10k theme (loaded after oh-my-zsh)
-      initContent = ''
-        source ${pkgs.zsh-powerlevel10k}/share/zsh-powerlevel10k/powerlevel10k.zsh-theme
-        [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+      initContent = lib.mkMerge [
+        (lib.mkBefore ''
+          typeset -U path PATH
+          path=("$HOME/.local/share/flutter/bin" $path)
+        '')
+        ''
+        if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
+          tmux attach-session -t default || tmux new-session -s default
+        fi
 
-        # npm global binaries (e.g. copilot)
+        DEFAULT_USER=$USER
+        VI_MODE_RESET_PROMPT_ON_MODE_CHANGE=true
+        MODE_INDICATOR="%F{white}N%f"
+        INSERT_MODE_INDICATOR="%F{yellow}I%f"
+        VI_MODE_SET_CURSOR=true
+        prompt_context(){}
+        prompt_dir(){
+            prompt_segment cyan $CURRENT_FG '%~'
+        }
+        ch(){
+            curl https://raw.githubusercontent.com/cheat/cheatsheets/refs/heads/master/$1
+        }
+        function n() {
+            local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+            command yazi "$@" --cwd-file="$tmp"
+            IFS= read -r -d "" cwd < "$tmp"
+            [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+            rm -f -- "$tmp"
+        }
+
+        # npm global binaries
         export PATH="$HOME/.npm-global/bin:$PATH"
-
-        # GITLAB_TOKEN export removed — re-enable alongside the sops block.
-      '';
-    };
-
-    neovim = {
-      enable = true;
-      defaultEditor = true;
-      viAlias = true;
-      vimAlias = true;
-      withPython3 = false;
-      withRuby = false;
+      ''
+      ];
     };
 
     vscode = {
@@ -272,50 +347,34 @@
     };
 
     fzf.enable = true;
+
     zoxide = {
       enable = true;
       enableZshIntegration = true;
     };
-  };
-  # --- 3. SERVIZI ---
-  services.ssh-agent.enable = true;
-  # network-manager-applet removed — it's an X11 tray applet that doesn't
-  # render under Hyprland; DMS provides its own network widget.
 
-  # services.gnome-keyring = {
-  #   enable = true;
-  #   components = [ "pkcs11" "secrets" "ssh" ];
-  # };
-
-  services.nextcloud-client = {
-    enable = true;
-    startInBackground = true;
+    home-manager.enable = true;
   };
 
-  # --- 4. STATO ---
-  home.stateVersion = "25.11";
-  programs.home-manager.enable = true;
-
-  programs.gh = {
-    enable = true;
-    # gh-copilot extension was removed from nixpkgs; use the standalone
-    # github-copilot-cli (already in home.packages above) instead.
+  services = {
+    ssh-agent.enable = true;
+    nextcloud-client = {
+      enable = true;
+      startInBackground = true;
+    };
   };
 
+  # Propagate session env into systemd --user (flatpak portals, etc.)
+  # Anchored to hyprland-session.target since native Hyprland reaches
+  # graphical-session.target via the former.
   systemd.user.services.fix-dbus-environment = {
     Unit = {
       Description = "Fix DBus environment variables for Wayland session";
-      # Bound to hyprland-session.target (not graphical-session.target) because
-      # native Hyprland (no UWSM) only reaches graphical-session.target *via*
-      # hyprland-session.target — anchoring one rung lower avoids a cycle.
       After = [ "hyprland-session.target" ];
       PartOf = [ "hyprland-session.target" ];
     };
     Service = {
       Type = "oneshot";
-      # Propagate session environment to systemd/D-Bus user services.
-      # PATH is critical: without it, xdg-desktop-portal can't resolve
-      # Exec= lines in .desktop files → Flatpak "No Apps available" for OAuth.
       ExecStart = "${pkgs.bash}/bin/bash -c '${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY PATH XDG_DATA_DIRS XDG_CURRENT_DESKTOP'";
     };
     Install = {
@@ -323,13 +382,13 @@
     };
   };
 
+  # GTK module on so HM wires xdg paths correctly; DMS matugen writes the
+  # actual color overrides.
+  gtk.enable = true;
+
   # DankMaterialShell is installed system-wide via the NixOS module
   # (see modules/desktop.nix). Configs land in /etc/xdg/quickshell/dms.
 
   # Hyprland user config lives in ./hyprland (declarative attrset via
   # wayland.windowManager.hyprland.settings, split into hyprland.nix + binds.nix).
-
-  # GTK theming — DMS's matugen integration writes color overrides; this just
-  # turns the GTK module on so home-manager wires xdg paths correctly.
-  gtk.enable = true;
 }
