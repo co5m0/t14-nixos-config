@@ -1,4 +1,9 @@
-{ config, pkgs, inputs, ... }:
+{
+  config,
+  pkgs,
+  inputs,
+  ...
+}:
 
 {
   # --- 1. System & Boot ---
@@ -9,7 +14,10 @@
       options = "--delete-older-than 7d";
     };
     settings = {
-      experimental-features = [ "nix-command" "flakes" ];
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
       auto-optimise-store = true;
 
       max-jobs = "auto";
@@ -77,11 +85,20 @@
   users.users.co5mo = {
     isNormalUser = true;
     description = "co5mo";
-    extraGroups = [ "networkmanager" "wheel" "docker" "video" "input" ];
+    extraGroups = [
+      "networkmanager"
+      "wheel"
+      "docker"
+      "video"
+      "input"
+    ];
     shell = pkgs.zsh;
   };
   programs.nix-ld.enable = true;
-  programs.nix-ld.libraries = with pkgs; [ stdenv.cc.cc.lib zlib ];
+  programs.nix-ld.libraries = with pkgs; [
+    stdenv.cc.cc.lib
+    zlib
+  ];
   programs.zsh.enable = true;
 
   environment.systemPackages = with pkgs; [
@@ -94,6 +111,35 @@
 
     netcat-gnu
   ];
+
+  services.keyd = {
+    enable = true;
+    keyboards.default = {
+      ids = [ "*" ];
+      settings = {
+        main = {
+          capslock = "overload(ctrl_vim, esc)";
+        };
+
+        # ctrl_vim modifier layer; inherits from 'Ctrl' modifier layer
+        "ctrl_vim:C" = {
+          space = "swap(vim_mode)";
+        };
+
+        # vim_mode modifier layer; also inherits from 'Ctrl' modifier layer
+        "vim_mode:C" = {
+          h = "left";
+          j = "down";
+          k = "up";
+          l = "right";
+          # forward word
+          w = "C-right";
+          # backward word
+          b = "C-left";
+        };
+      };
+    };
+  };
 
   nixpkgs.config.allowUnfree = true;
 
