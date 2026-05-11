@@ -38,6 +38,18 @@
       "SUPER, up,    movefocus, u"
       "SUPER, down,  movefocus, d"
 
+      # Move the active window with mainMod + SHIFT + hjkl
+      "SUPER SHIFT, h, movewindow, l"
+      "SUPER SHIFT, j, movewindow, d"
+      "SUPER SHIFT, k, movewindow, u"
+      "SUPER SHIFT, l, movewindow, r"
+
+      # SUPER window with mainMod + CTRL + hjkl (bonus, very vim-like)
+      "SUPER CTRL, h, resizeactive, -40 0"
+      "SUPER CTRL, j, resizeactive, 0 40"
+      "SUPER CTRL, k, resizeactive, 0 -40"
+      "SUPER CTRL, l, resizeactive, 40 0"
+
       # --- Workspaces 1-9 ---
       "SUPER, 1, workspace, 1"
       "SUPER, 2, workspace, 2"
