@@ -52,7 +52,17 @@
     llm-agents.url = "github:numtide/llm-agents.nix";
   };
 
-  outputs = { self, nixpkgs, home-manager, sops-nix, hyprland, dms, ... }@inputs:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      sops-nix,
+      hyprland,
+      dms,
+      llm-agents,
+      ...
+    }@inputs:
     let
       system = "x86_64-linux";
 
@@ -81,12 +91,15 @@
         dms.nixosModules.dank-material-shell
       ];
 
-      mkHost = hostModule: nixpkgs.lib.nixosSystem {
-        inherit system;
-        specialArgs = { inherit inputs; };
-        modules = sharedModules ++ [ hostModule ];
-      };
-    in {
+      mkHost =
+        hostModule:
+        nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = { inherit inputs; };
+          modules = sharedModules ++ [ hostModule ];
+        };
+    in
+    {
       # `pluto`    — real T14 laptop install (uses ./hardware-configuration.nix).
       # `plutovm`  — manual-install VM. User installs NixOS by hand, clones the
       #              repo inside, copies hardware-configuration.nix into
@@ -96,31 +109,33 @@
         plutovm = mkHost ./hosts/plutovm.nix;
       };
 
-      devShells.${system} = let
-        pkgs = import nixpkgs {
-          inherit system;
-          config.allowUnfree = true;
+      devShells.${system} =
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+          };
+        in
+        {
+          dev-tools = pkgs.mkShell {
+            name = "dev-tools";
+            packages = with pkgs; [
+              pciutils
+              util-linux
+              lm_sensors
+              mesa-demos
+              vulkan-tools
+              glmark2
+              vkmark
+              stress-ng
+              htop
+              fastfetch
+            ];
+            shellHook = ''
+              echo "Entering Persistent Nix Shell: dev-tools"
+              echo "Available commands: lspci, glxinfo, vulkaninfo, stress-ng, glmark2, vkmark, htop."
+            '';
+          };
         };
-      in {
-        dev-tools = pkgs.mkShell {
-          name = "dev-tools";
-          packages = with pkgs; [
-            pciutils
-            util-linux
-            lm_sensors
-            mesa-demos
-            vulkan-tools
-            glmark2
-            vkmark
-            stress-ng
-            htop
-            fastfetch
-          ];
-          shellHook = ''
-            echo "Entering Persistent Nix Shell: dev-tools"
-            echo "Available commands: lspci, glxinfo, vulkaninfo, stress-ng, glmark2, vkmark, htop."
-          '';
-        };
-      };
     };
 }

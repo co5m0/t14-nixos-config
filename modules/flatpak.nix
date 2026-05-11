@@ -23,6 +23,12 @@
       # Notes/PKM (optional - uncomment if needed)
       "md.obsidian.Obsidian"
 
+      # Valent (kde alternatives)
+      {
+        flatpakref = "https://valent.andyholmes.ca/valent.flatpakref";
+        sha256 = "1v5xxaszxir44ymihwrb8yj2rg9bsz96khl5if0si5xnjcja3ygh";
+      }
+
       # Secrets (optional - uncomment if needed)
       # "org.keepassxc.KeePassXC"
 

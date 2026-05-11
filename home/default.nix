@@ -40,6 +40,7 @@
       delta
       nnn
       yazi
+      gcc
 
       # --- System monitoring ---
       btop
@@ -57,7 +58,6 @@
       typescript
       go
       gopls
-      rust-analyzer
       rustup
       uv
       lua-language-server
@@ -74,7 +74,7 @@
       awscli2
       aws-vault
       ssm-session-manager-plugin
-      pulumi-bin
+      #pulumi-bin
 
       # --- Kubernetes ---
       kubectl
@@ -90,6 +90,10 @@
       # --- LLM CLIs ---
       gemini-cli-bin
       inputs.llm-agents.packages.${pkgs.system}.pi
+      inputs.llm-agents.packages.${pkgs.system}.claude-code
+      inputs.llm-agents.packages.${pkgs.system}.codex
+      inputs.llm-agents.packages.${pkgs.system}.gemini-cli
+
       inputs.dagger.packages.${pkgs.system}.dagger
 
       # --- Editor ---
@@ -156,10 +160,8 @@
   # --- Raw config files ported from ~/.config ---
   xdg.configFile = {
     "btop/btop.conf".source = ./btop/btop.conf;
-    "k9s/config.yaml".source = ./k9s/config.yaml;
     "lazygit/config.yml".source = ./lazygit/config.yml;
     "yazi/yazi.toml".source = ./yazi/yazi.toml;
-    "gh/config.yml".source = ./gh/config.yml;
     "gh-dash/config.yml".source = ./gh-dash/config.yml;
     "fontconfig/fonts.conf".source = ./fontconfig/fonts.conf;
 
@@ -168,10 +170,6 @@
       source = ./ghostty;
       recursive = true;
     };
-
-    # Vicinae app launcher (legacy from Omarchy; runs via exec-once in hyprland)
-    "vicinae/settings.json".source = ./vicinae/settings.json;
-    "vicinae/vicinae.json".source = ./vicinae/vicinae.json;
 
     # Neovim — recursive deploy. lazy.nvim bootstraps from init.lua at first
     # launch and pulls plugins per lazy-lock.json. .neoconf.json is the
@@ -193,18 +191,18 @@
     ssh = {
       enable = true;
       enableDefaultConfig = false;
-      matchBlocks."*" = {
-        addKeysToAgent = "yes";
-        forwardAgent = false;
-        compression = false;
-        serverAliveInterval = 0;
-        serverAliveCountMax = 3;
-        hashKnownHosts = false;
-        userKnownHostsFile = "~/.ssh/known_hosts";
-        controlMaster = "no";
-        controlPath = "~/.ssh/master-%r@%n:%p";
-        controlPersist = "no";
-      };
+      # matchBlocks."*" = {
+      #   addKeysToAgent = "yes";
+      #   forwardAgent = false;
+      #   compression = false;
+      #   serverAliveInterval = 0;
+      #   serverAliveCountMax = 3;
+      #   hashKnownHosts = false;
+      #   userKnownHostsFile = "~/.ssh/known_hosts";
+      #   controlMaster = "no";
+      #   controlPath = "~/.ssh/master-%r@%n:%p";
+      #   controlPersist = "no";
+      # };
     };
 
     git = {
@@ -255,8 +253,8 @@
         # Aliases ported from ~/.nix/home-manager.nix
         ll = "ls -l";
         la = "ls -a";
-        update = "sudo nixos-rebuild switch --flake ~/git/co5mo/t14-nixos-config#pluto";
-        switch = "nix run nixpkgs#home-manager -- switch --flake ~/git/co5mo/t14-nixos-config#co5mo";
+        switch = "sudo nixos-rebuild switch --flake ~/.nix#pluto";
+        update = "sudo nix flake update --flake ~/.nix";
         rless = "less -r";
         vim = "nvim";
         vi = "nvim";
@@ -307,33 +305,33 @@
           path=("$HOME/.local/share/flutter/bin" $path)
         '')
         ''
-        if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
-          tmux attach-session -t default || tmux new-session -s default
-        fi
+          if command -v tmux &> /dev/null && [ -z "$TMUX" ]; then
+            tmux attach-session -t default || tmux new-session -s default
+          fi
 
-        DEFAULT_USER=$USER
-        VI_MODE_RESET_PROMPT_ON_MODE_CHANGE=true
-        MODE_INDICATOR="%F{white}N%f"
-        INSERT_MODE_INDICATOR="%F{yellow}I%f"
-        VI_MODE_SET_CURSOR=true
-        prompt_context(){}
-        prompt_dir(){
-            prompt_segment cyan $CURRENT_FG '%~'
-        }
-        ch(){
-            curl https://raw.githubusercontent.com/cheat/cheatsheets/refs/heads/master/$1
-        }
-        function n() {
-            local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
-            command yazi "$@" --cwd-file="$tmp"
-            IFS= read -r -d "" cwd < "$tmp"
-            [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
-            rm -f -- "$tmp"
-        }
+          DEFAULT_USER=$USER
+          VI_MODE_RESET_PROMPT_ON_MODE_CHANGE=true
+          MODE_INDICATOR="%F{white}N%f"
+          INSERT_MODE_INDICATOR="%F{yellow}I%f"
+          VI_MODE_SET_CURSOR=true
+          prompt_context(){}
+          prompt_dir(){
+              prompt_segment cyan $CURRENT_FG '%~'
+          }
+          ch(){
+              curl https://raw.githubusercontent.com/cheat/cheatsheets/refs/heads/master/$1
+          }
+          function n() {
+              local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+              command yazi "$@" --cwd-file="$tmp"
+              IFS= read -r -d "" cwd < "$tmp"
+              [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+              rm -f -- "$tmp"
+          }
 
-        # npm global binaries
-        export PATH="$HOME/.npm-global/bin:$PATH"
-      ''
+          # npm global binaries
+          export PATH="$HOME/.npm-global/bin:$PATH"
+        ''
       ];
     };
 
@@ -358,10 +356,6 @@
 
   services = {
     ssh-agent.enable = true;
-    nextcloud-client = {
-      enable = true;
-      startInBackground = true;
-    };
   };
 
   # Propagate session env into systemd --user (flatpak portals, etc.)

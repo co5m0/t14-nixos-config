@@ -47,6 +47,7 @@
 
   # --- 2. Networking ---
   networking.networkmanager.enable = true;
+  networking.firewall.enable = false;
 
   virtualisation.docker.enable = true;
   security.polkit.enable = true;

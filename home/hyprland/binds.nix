@@ -7,17 +7,17 @@
       "SUPER ALT, Return, exec, ghostty -e tmux new"
       "SUPER, Q,         killactive"
       "SUPER SHIFT, E,   exit"
+      "SUPER, F,   fullscreen"
 
       # --- DMS shell (Super+Space owned by DMS spotlight; vicinae runs in
       # background via exec-once but isn't keybound) ---
       "SUPER, Space,     exec, dms ipc call spotlight toggle"
-      "SUPER, L,         exec, dms ipc call lock lock"
+      "SUPER SHIFT, L,         exec, dms ipc call lock lock"
 
       # --- App launchers (translated from Omarchy helpers; flatpak/nix paths) ---
       "SUPER SHIFT, Return, exec, zen-browser"
       "SUPER SHIFT, B,      exec, zen-browser"
       "SUPER SHIFT ALT, B,  exec, zen-browser --private"
-      "SUPER SHIFT, F,      exec, nautilus --new-window"
       "SUPER SHIFT, M,      exec, flatpak run com.spotify.Client"
       "SUPER SHIFT, N,      exec, ghostty -e nvim"
       "SUPER SHIFT, T,      exec, ghostty -e btop"
@@ -55,10 +55,30 @@
       "SUPER, mouse:273, resizewindow"
     ];
 
-    # Lid switch: run the user's clamshell script when the lid opens.
-    # Path is resolved at runtime (the script is part of Omarchy's hypr/
-    # tree, not yet ported into the repo — TODO if you want it on NixOS).
+    # Locked + repeat: level adjusts must repeat while held and keep
+    # working from the lock screen. Routed through DMS IPC so the shell
+    # renders its OSD popup instead of silently bumping the level.
+    bindel = [
+      ",XF86AudioRaiseVolume,  exec, dms ipc call audio increment 5"
+      ",XF86AudioLowerVolume,  exec, dms ipc call audio decrement 5"
+      ",XF86MonBrightnessUp,   exec, dms ipc call brightness increment 5 \"\""
+      ",XF86MonBrightnessDown, exec, dms ipc call brightness decrement 5 \"\""
+      ",XF86KbdBrightnessUp,   exec, dms ipc call brightness increment 10 leds:tpacpi::kbd_backlight"
+      ",XF86KbdBrightnessDown, exec, dms ipc call brightness decrement 10 leds:tpacpi::kbd_backlight"
+    ];
+
+    # Locked (no repeat): toggles + media transport keep firing even when
+    # the screen is locked. Lid switch runs the clamshell script when the
+    # lid opens (script lives in Omarchy's hypr/ tree, not yet ported
+    # into this repo — TODO).
     bindl = [
+      ",XF86AudioMute,    exec, dms ipc call audio mute"
+      ",XF86AudioMicMute, exec, dms ipc call audio micmute"
+      ",XF86AudioPlay,    exec, playerctl play-pause"
+      ",XF86AudioPause,   exec, playerctl play-pause"
+      ",XF86AudioNext,    exec, playerctl next"
+      ",XF86AudioPrev,    exec, playerctl previous"
+
       ",switch:Lid Switch, exec, ~/.config/hypr/clamshell_mode.sh open"
     ];
 

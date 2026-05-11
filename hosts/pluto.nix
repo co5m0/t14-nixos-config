@@ -1,4 +1,9 @@
-{ config, pkgs, inputs, ... }:
+{
+  config,
+  pkgs,
+  inputs,
+  ...
+}:
 
 {
   imports = [
@@ -29,8 +34,6 @@
   services.fprintd.enable = true;
   services.fstrim.enable = true;
   services.fwupd.enable = true;
-
-  services.netbird.enable = true;
 
   system.stateVersion = "25.11";
 }

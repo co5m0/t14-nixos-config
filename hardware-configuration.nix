@@ -4,46 +4,37 @@
 { config, lib, pkgs, modulesPath, ... }:
 
 {
-  imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
+  imports =
+    [ (modulesPath + "/installer/scan/not-detected.nix")
+    ];
 
-  boot.initrd.availableKernelModules =
-    [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "sd_mod" ];
+  boot.initrd.availableKernelModules = [ "nvme" "xhci_pci" "thunderbolt" "usb_storage" "usbhid" "sd_mod" ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-amd" ];
   boot.extraModulePackages = [ ];
 
-  fileSystems."/" = {
-    device = "/dev/disk/by-uuid/c74e6c2b-d6b6-4c9d-80d6-d6bba0bbc7f0";
-    fsType = "ext4";
-  };
+  fileSystems."/" =
+    { device = "/dev/mapper/luks-a03321ed-b771-4322-8f9b-9142f8e6b926";
+      fsType = "btrfs";
+      options = [ "subvol=@" ];
+    };
 
-  boot.initrd.luks.devices."luks-8769525d-2ad5-4a15-9746-9ae763df2025".device =
-    "/dev/disk/by-uuid/8769525d-2ad5-4a15-9746-9ae763df2025";
+  boot.initrd.luks.devices."luks-a03321ed-b771-4322-8f9b-9142f8e6b926".device = "/dev/disk/by-uuid/a03321ed-b771-4322-8f9b-9142f8e6b926";
 
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-uuid/49F2-85CE";
-    fsType = "vfat";
-    options = [ "fmask=0077" "dmask=0077" ];
-  };
+  fileSystems."/home" =
+    { device = "/dev/mapper/luks-a03321ed-b771-4322-8f9b-9142f8e6b926";
+      fsType = "btrfs";
+      options = [ "subvol=@home" ];
+    };
+
+  fileSystems."/boot" =
+    { device = "/dev/disk/by-uuid/AB41-FF2E";
+      fsType = "vfat";
+      options = [ "fmask=0077" "dmask=0077" ];
+    };
 
   swapDevices = [ ];
 
-  # Enables DHCP on each ethernet and wireless interface. In case of scripted networking
-  # (the default) this is the recommended approach. When using systemd-networkd it's
-  # still possible to use this option, but it's recommended to use it in conjunction
-  # with explicit per-interface declarations with `networking.interfaces.<interface>.useDHCP`.
-  networking.useDHCP = lib.mkDefault true;
-  # networking.interfaces.enp195s0f0.useDHCP = lib.mkDefault true;
-  # networking.interfaces.wlp194s0.useDHCP = lib.mkDefault true;
-
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-  hardware.cpu.amd.updateMicrocode =
-    lib.mkDefault config.hardware.enableRedistributableFirmware;
-  hardware.bluetooth.settings = {
-    General = {
-      # Conservative: some controllers behave better with privacy off
-      Privacy = "device";
-    };
-  };
-
+  hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 }
