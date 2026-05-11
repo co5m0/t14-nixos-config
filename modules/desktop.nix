@@ -119,6 +119,8 @@
     brightnessctl
     playerctl
     pamixer
+    hyprshot
+    satty
 
     # Default terminal (referenced by hyprland Super+Return)
     ghostty

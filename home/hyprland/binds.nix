@@ -26,6 +26,10 @@
       "SUPER SHIFT, W,      exec, typora --enable-wayland-ime"
       "SUPER SHIFT, Y,      exec, zen-browser https://youtube.com/"
 
+      # --- Screenshot: hyprshot region → satty for annotation; save to
+      # ~/Pictures/Screenshots and copy the edited result to clipboard.
+      ", Print, exec, bash -c 'mkdir -p ~/Pictures/Screenshots && hyprshot -m region --raw | satty --filename - --output-filename ~/Pictures/Screenshots/satty-$(date +%Y%m%d-%H%M%S).png --early-exit --copy-command wl-copy'"
+
       # --- Window focus (HJKL vim-style, ported from bindings.conf) ---
       "SUPER, H, movefocus, l"
       "SUPER, L, movefocus, r"
@@ -106,6 +110,13 @@
       "workspace 2, match:title ^(.*Zen.*)$"
       "workspace 3, match:class ^(.*[Gg]hostty.*)$"
       "workspace 5, match:class ^(.*[Oo]bsidian.*)$"
+
+      # Float browser Picture-in-Picture popups and keep them on top
+      "float on, match:title ^(Picture.?in.?[Pp]icture)$"
+      "size 480 270, match:title ^(Picture-in-Picture)$"
+
+      # Float satty (screenshot annotator)
+      "float on, match:class ^(com\\.gabm\\.satty)$"
     ];
 
     # Vicinae visual tweaks (kept even though it's not super+space-bound)

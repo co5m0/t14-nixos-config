@@ -87,6 +87,9 @@
       lazydocker
       lazysql
 
+      # -- Hypr ---
+      hyprshot
+
       # --- LLM CLIs ---
       gemini-cli-bin
       inputs.llm-agents.packages.${pkgs.system}.pi
@@ -332,15 +335,6 @@
           # npm global binaries
           export PATH="$HOME/.npm-global/bin:$PATH"
         ''
-      ];
-    };
-
-    vscode = {
-      enable = true;
-      profiles.default.extensions = with pkgs.vscode-extensions; [
-        dracula-theme.theme-dracula
-        vscodevim.vim
-        yzhang.markdown-all-in-one
       ];
     };
 
