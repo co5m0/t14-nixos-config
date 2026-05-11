@@ -63,6 +63,10 @@
     };
   };
 
+  # --- Power (UPower) ---
+  # DMS battery widget reads state via UPower over DBus.
+  services.upower.enable = true;
+
   # --- Bluetooth ---
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
