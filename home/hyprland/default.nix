@@ -48,6 +48,33 @@
         rounding = 8;
       };
 
+      # Window group (tabbed) UI. Stock defaults are nearly invisible, so style
+      # the groupbar as a flat title-bar strip: solid fills, no gradients, no
+      # rounding. Catppuccin Macchiato palette to match the rest of the desktop.
+      group = {
+        "col.border_active" = "rgb(8aadf4)"; # Blue
+        "col.border_inactive" = "rgb(494d64)"; # Surface 1
+
+        groupbar = {
+          enabled = true;
+          font_family = "JetBrainsMono Nerd Font";
+          font_size = 11;
+          height = 18;
+          indicator_height = 3;
+
+          # Solid, rounded tabs. gradients must be on for the colored fill to
+          # render at all — a single solid color per state keeps it flat-looking
+          # while giving text a readable opaque background.
+          gradients = true;
+          rounding = 8;
+          gradient_rounding = 8;
+
+          text_color = "rgb(cad3f5)"; # Text
+          "col.active" = "rgb(8aadf4)"; # Blue
+          "col.inactive" = "rgb(363a4f)"; # Surface 0
+        };
+      };
+
       misc = {
         disable_hyprland_logo = true;
         disable_splash_rendering = true;

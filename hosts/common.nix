@@ -54,8 +54,20 @@
   };
 
   # --- 2. Networking ---
-  networking.networkmanager.enable = true;
+  services.tailscale.enable = true;
+  # NOTE: Do NOT enable networking.nftables here. It switches the firewall
+  # backend to native nftables, which conflicts with Docker's iptables-nft
+  # bridge/NAT rules and makes containers (and the host bridge) unreachable.
+  # The host firewall is disabled, so trustedInterfaces/allowedUDPPorts would
+  # be inert anyway; Tailscale works fine on the default (iptables) backend.
   networking.firewall.enable = false;
+
+  # Optimization: don't block boot waiting for the network to come online
+  # (helpful with VPNs like Tailscale).
+  systemd.network.wait-online.enable = false;
+  boot.initrd.systemd.network.wait-online.enable = false;
+
+  networking.networkmanager.enable = true;
 
   virtualisation.docker.enable = true;
   security.polkit.enable = true;
@@ -110,6 +122,8 @@
     usbutils
 
     netcat-gnu
+
+    kind
   ];
 
   services.keyd = {

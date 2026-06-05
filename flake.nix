@@ -50,6 +50,8 @@
 
     # numtide LLM-agent packaged CLIs (provides `pi`)
     llm-agents.url = "github:numtide/llm-agents.nix";
+
+    vegadiff.url = "github:co5m0/vegadiff";
   };
 
   outputs =
@@ -61,6 +63,7 @@
       hyprland,
       dms,
       llm-agents,
+      vegadiff,
       ...
     }@inputs:
     let

@@ -74,7 +74,7 @@
       awscli2
       aws-vault
       ssm-session-manager-plugin
-      #pulumi-bin
+      pulumi-bin
 
       # --- Kubernetes ---
       kubectl
@@ -91,13 +91,15 @@
       hyprshot
 
       # --- LLM CLIs ---
-      gemini-cli-bin
-      inputs.llm-agents.packages.${pkgs.system}.pi
+      # inputs.llm-agents.packages.${pkgs.system}.pi
       inputs.llm-agents.packages.${pkgs.system}.claude-code
       inputs.llm-agents.packages.${pkgs.system}.codex
-      inputs.llm-agents.packages.${pkgs.system}.gemini-cli
+      inputs.llm-agents.packages.${pkgs.system}.antigravity
+      # inputs.llm-agents.packages.${pkgs.system}.omp
 
+      # --- Dev Tools ---
       inputs.dagger.packages.${pkgs.system}.dagger
+      inputs.vegadiff.packages.${pkgs.system}.vegadiff
 
       # --- Editor ---
       # Bare neovim (no HM module): init.lua + lazy.nvim manage plugins at
@@ -155,9 +157,26 @@
       ".tmux.conf".source = "${inputs.oh-my-tmux}/.tmux.conf";
       ".tmux.conf.local".source = ./tmux/conf.local;
       ".config/xdg-terminals.list".source = ./xdg-terminals.list;
+      ".npmrc".text = ''
+        prefix=${config.home.homeDirectory}/.npm-global
+        cache=${config.home.homeDirectory}/.cache/npm
+      '';
     };
 
     stateVersion = "25.11";
+  };
+
+  # Default browser. Zen ships as zen-beta.desktop (Exec=zen-beta); register it
+  # as the handler for web schemes/HTML so links open in Zen everywhere.
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "text/html" = "zen-beta.desktop";
+      "x-scheme-handler/http" = "zen-beta.desktop";
+      "x-scheme-handler/https" = "zen-beta.desktop";
+      "x-scheme-handler/about" = "zen-beta.desktop";
+      "x-scheme-handler/unknown" = "zen-beta.desktop";
+    };
   };
 
   # --- Raw config files ported from ~/.config ---
@@ -229,6 +248,12 @@
         pull.rebase = true;
         push.autoSetupRemote = true;
 
+        merge.tool = "vegadiff";
+        mergetool.vegadiff = {
+          cmd = ''vegadiff "$BASE" "$LOCAL" "$REMOTE" "$MERGED"'';
+          trustExitCode = true;
+        };
+
         diff = {
           algorithm = "histogram";
           colorMoved = "plain";
@@ -275,6 +300,10 @@
         TERMINFO = "$HOME/.terminfo";
         TERM = "xterm-256color";
         NNN_FCOLORS = "D4DEB778E79F9F67D2E5E5D2";
+
+        # npm global installs must not target /nix/store
+        NPM_CONFIG_PREFIX = "$HOME/.npm-global";
+        NPM_CONFIG_CACHE = "$HOME/.cache/npm";
       };
 
       history = {

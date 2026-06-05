@@ -66,7 +66,7 @@
       # CPU Performance Management
       CPU_SCALING_GOVERNOR_ON_AC = "performance";
       CPU_SCALING_GOVERNOR_ON_BAT = "powersave";
-      CPU_ENERGY_PERF_POLICY_ON_AC = "performance";
+      CPU_ENERGY_PERF_POLICY_ON_AC = "balance_power";
       CPU_ENERGY_PERF_POLICY_ON_BAT = "power";
 
       # AMD-specific: CPU boost behavior
@@ -74,7 +74,7 @@
       CPU_BOOST_ON_BAT = 0;
 
       # Platform profiles (AMD-specific)
-      PLATFORM_PROFILE_ON_AC = "performance";
+      PLATFORM_PROFILE_ON_AC = "balanced";
       PLATFORM_PROFILE_ON_BAT = "low-power";
 
       # GPU Power Management (AMD)
@@ -114,9 +114,9 @@
       # Restore radio device state after suspend (WiFi/Bluetooth)
       RESTORE_DEVICE_STATE_ON_STARTUP = 1;
 
-      # Battery Charge Thresholds (40-80% for longevity)
-      START_CHARGE_THRESH_BAT0 = 40;
-      STOP_CHARGE_THRESH_BAT0 = 80;
+      # Battery Charge Thresholds (60-80% for longevity)
+      START_CHARGE_THRESH_BAT0 = 60;
+      STOP_CHARGE_THRESH_BAT0 = 90;
     };
   };
 }

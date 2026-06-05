@@ -12,7 +12,7 @@
       # --- DMS shell (Super+Space owned by DMS spotlight; vicinae runs in
       # background via exec-once but isn't keybound) ---
       "SUPER, Space,     exec, dms ipc call spotlight toggle"
-      "SUPER SHIFT, L,         exec, dms ipc call lock lock"
+      "SUPER SHIFT CTRL, L,         exec, dms ipc call lock lock"
 
       # --- App launchers (translated from Omarchy helpers; flatpak/nix paths) ---
       "SUPER SHIFT, Return, exec, zen-browser"
@@ -64,6 +64,33 @@
       "SUPER, 7, workspace, 7"
       "SUPER, 8, workspace, 8"
       "SUPER, 9, workspace, 9"
+
+      # --- Move active window to workspace 1-9 ---
+      "SUPER SHIFT, 1, movetoworkspace, 1"
+      "SUPER SHIFT, 2, movetoworkspace, 2"
+      "SUPER SHIFT, 3, movetoworkspace, 3"
+      "SUPER SHIFT, 4, movetoworkspace, 4"
+      "SUPER SHIFT, 5, movetoworkspace, 5"
+      "SUPER SHIFT, 6, movetoworkspace, 6"
+      "SUPER SHIFT, 7, movetoworkspace, 7"
+      "SUPER SHIFT, 8, movetoworkspace, 8"
+      "SUPER SHIFT, 9, movetoworkspace, 9"
+
+      # --- Groups (tabbed window stacks) ---
+      "SUPER, G,         togglegroup"
+      "SUPER, Tab,       changegroupactive, f"
+      "SUPER SHIFT, Tab, changegroupactive, b"
+
+      # Jump directly to tab N inside the current group
+      "SUPER ALT, 1, changegroupactive, 1"
+      "SUPER ALT, 2, changegroupactive, 2"
+      "SUPER ALT, 3, changegroupactive, 3"
+      "SUPER ALT, 4, changegroupactive, 4"
+      "SUPER ALT, 5, changegroupactive, 5"
+      "SUPER ALT, 6, changegroupactive, 6"
+      "SUPER ALT, 7, changegroupactive, 7"
+      "SUPER ALT, 8, changegroupactive, 8"
+      "SUPER ALT, 9, changegroupactive, 9"
     ];
 
     bindm = [

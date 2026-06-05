@@ -23,6 +23,12 @@
       # Notes/PKM (optional - uncomment if needed)
       "md.obsidian.Obsidian"
 
+      # OBS
+      "com.obsproject.Studio"
+
+      # Stalck
+      "com.slack.Slack"
+
       # Valent (kde alternatives)
       {
         flatpakref = "https://valent.andyholmes.ca/valent.flatpakref";
