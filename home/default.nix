@@ -41,6 +41,9 @@
       nnn
       yazi
       gcc
+      gnumake
+      gnupg
+      pass
 
       # --- System monitoring ---
       btop
