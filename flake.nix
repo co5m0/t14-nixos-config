@@ -52,6 +52,8 @@
     llm-agents.url = "github:numtide/llm-agents.nix";
 
     vegadiff.url = "github:co5m0/vegadiff";
+
+    vicinae.url = "github:vicinaehq/vicinae";
   };
 
   outputs =
@@ -64,6 +66,7 @@
       dms,
       llm-agents,
       vegadiff,
+      vicinae,
       ...
     }@inputs:
     let
