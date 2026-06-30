@@ -94,7 +94,7 @@
       hyprshot
 
       # --- LLM CLIs ---
-      # inputs.llm-agents.packages.${pkgs.system}.pi
+      inputs.llm-agents.packages.${pkgs.system}.pi
       inputs.llm-agents.packages.${pkgs.system}.claude-code
       inputs.llm-agents.packages.${pkgs.system}.codex
       inputs.llm-agents.packages.${pkgs.system}.antigravity
@@ -112,7 +112,6 @@
       # --- Apps ---
       inputs.zen-browser.packages.${pkgs.system}.default
       legcord
-      mailspring
       rtk
       fence
 

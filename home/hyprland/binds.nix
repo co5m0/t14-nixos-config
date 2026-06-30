@@ -9,9 +9,10 @@
       "SUPER SHIFT, E,   exit"
       "SUPER, F,   fullscreen"
 
-      # --- DMS shell (Super+Space owned by DMS spotlight; vicinae runs in
-      # background via exec-once but isn't keybound) ---
-      "SUPER, Space,     exec, dms ipc call spotlight toggle"
+      # --- DMS shell (vicinae owns Super+Space as the launcher; its server
+      # runs in background via exec-once. DMS spotlight on Super+Alt+Space) ---
+      "SUPER, Space,     exec, vicinae toggle"
+      "SUPER ALT, Space, exec, dms ipc call spotlight toggle"
       "SUPER SHIFT CTRL, L,         exec, dms ipc call lock lock"
 
       # --- App launchers (translated from Omarchy helpers; flatpak/nix paths) ---

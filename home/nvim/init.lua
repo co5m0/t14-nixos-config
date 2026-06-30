@@ -422,76 +422,108 @@ require("lazy").setup({
         },
     },
 
-    -- Treesitter
-    {
-        "nvim-treesitter/nvim-treesitter",
-        build = ":TSUpdate",
-        config = function()
-            require("nvim-treesitter.configs").setup({
-                ensure_installed = {
-                    "c",
-                    "cpp",
-                    "go",
-                    "lua",
-                    "python",
-                    "rust",
-                    "tsx",
-                    "javascript",
-                    "typescript",
-                    "vim",
-                    "vimdoc",
-                    "terraform",
-                    "hcl",
-                    "json",
-                    "yaml",
-                },
-                auto_install = true,
-                highlight = { enable = true },
-                indent = { enable = true },
-                textobjects = {
-                    select = {
-                        enable = true,
-                        lookahead = true,
-                        keymaps = {
-                            ["aa"] = "@parameter.outer",
-                            ["ia"] = "@parameter.inner",
-                            ["af"] = "@function.outer",
-                            ["if"] = "@function.inner",
-                        },
-                    },
-                },
-            })
-        end,
-    },
+    -- -- Treesitter
+    -- {
+    --     "nvim-treesitter/nvim-treesitter",
+    --     build = ":TSUpdate",
+    --     config = function()
+    --         require("nvim-treesitter.configs").setup({
+    --             ensure_installed = {
+    --                 "c",
+    --                 "cpp",
+    --                 "go",
+    --                 "lua",
+    --                 "python",
+    --                 "rust",
+    --                 "tsx",
+    --                 "javascript",
+    --                 "typescript",
+    --                 "vim",
+    --                 "vimdoc",
+    --                 "terraform",
+    --                 "hcl",
+    --                 "json",
+    --                 "yaml",
+    --             },
+    --             auto_install = true,
+    --             highlight = { enable = true },
+    --             indent = { enable = true },
+    --             textobjects = {
+    --                 select = {
+    --                     enable = true,
+    --                     lookahead = true,
+    --                     keymaps = {
+    --                         ["aa"] = "@parameter.outer",
+    --                         ["ia"] = "@parameter.inner",
+    --                         ["af"] = "@function.outer",
+    --                         ["if"] = "@function.inner",
+    --                     },
+    --                 },
+    --             },
+    --         })
+    --     end,
+    -- },
 
     -- Formatting (Conform)
     {
         "stevearc/conform.nvim",
         event = { "BufWritePre" },
-        opts = {
-            formatters = {
-                prettier = { prefer_local = "node_modules/.bin" },
-                biome = { prefer_local = "node_modules/.bin" },
-                oxfmt = {
-                    command = "oxfmt",
-                    args = { "--stdin-filepath", "$FILENAME", "-" },
-                    stdin = true,
-                    prefer_local = "node_modules/.bin",
+        opts = function()
+            -- Locate a project-local prettier.cjs by walking up from the file's
+            -- directory, and run it through `node`. Some yarn-workspace installs
+            -- ship prettier.cjs without the executable bit, which makes conform's
+            -- executable() check fail and silently skip prettier on save.
+            local function prettier_cjs(dirname)
+                local dir = dirname
+                while dir and dir ~= "" do
+                    local cjs = dir .. "/node_modules/prettier/bin/prettier.cjs"
+                    if (vim.uv or vim.loop).fs_stat(cjs) then
+                        return cjs
+                    end
+                    local parent = vim.fs.dirname(dir)
+                    if parent == dir then
+                        break
+                    end
+                    dir = parent
+                end
+            end
+            return {
+                formatters = {
+                    prettier = {
+                        command = function(_, ctx)
+                            return prettier_cjs(ctx.dirname) and "node" or "prettier"
+                        end,
+                        args = function(_, ctx)
+                            local prettier_args = { "--stdin-filepath", "$FILENAME" }
+                            local cjs = prettier_cjs(ctx.dirname)
+                            if cjs then
+                                table.insert(prettier_args, 1, cjs)
+                            end
+                            return prettier_args
+                        end,
+                    },
+                    biome = { prefer_local = "node_modules/.bin" },
+                    oxfmt = {
+                        command = "oxfmt",
+                        args = { "--stdin-filepath", "$FILENAME", "-" },
+                        stdin = true,
+                        prefer_local = "node_modules/.bin",
+                    },
                 },
-            },
-            formatters_by_ft = {
-                lua = { "stylua" },
-                python = { "isort", "black" },
-                javascript = { "biome", "oxfmt", "prettier", stop_after_first = true },
-                javascriptreact = { "biome", "oxfmt", "prettier", stop_after_first = true },
-                typescript = { "biome", "oxfmt", "prettier", stop_after_first = true },
-                typescriptreact = { "biome", "oxfmt", "prettier", stop_after_first = true },
-                terraform = { "terraform_fmt" },
-                json = { "jq" },
-                yaml = { "prettier" },
-            },
-            format_on_save = { timeout_ms = 500, lsp_fallback = true },
-        },
+                formatters_by_ft = {
+                    lua = { "stylua" },
+                    python = { "isort", "black" },
+                    javascript = { "biome", "oxfmt", "prettier", stop_after_first = true },
+                    javascriptreact = { "biome", "oxfmt", "prettier", stop_after_first = true },
+                    typescript = { "biome", "oxfmt", "prettier", stop_after_first = true },
+                    typescriptreact = { "biome", "oxfmt", "prettier", stop_after_first = true },
+                    terraform = { "terraform_fmt" },
+                    json = { "jq" },
+                    yaml = { "prettier" },
+                },
+                format_on_save = { timeout_ms = 500, lsp_fallback = true },
+            }
+        end,
     },
 
     -- LSP Configuration

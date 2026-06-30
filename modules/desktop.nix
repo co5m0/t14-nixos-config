@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 
 {
   # --- Compositor (Hyprland nixosModule imported via flake) ---
@@ -52,8 +52,8 @@
   systemd.user.services.hyprpolkitagent = {
     description = "Hyprpolkitagent — polkit authentication agent";
     wantedBy = [ "hyprland-session.target" ];
-    wants    = [ "hyprland-session.target" ];
-    after    = [ "hyprland-session.target" ];
+    wants = [ "hyprland-session.target" ];
+    after = [ "hyprland-session.target" ];
     serviceConfig = {
       Type = "simple";
       ExecStart = "${pkgs.hyprpolkitagent}/libexec/hyprpolkitagent";
@@ -127,6 +127,8 @@
 
     # Kubernetes helper (system-wide so root can use it too)
     kubernetes-helm
+
+    inputs.vicinae.packages.${pkgs.system}.default
   ];
 
   services.dbus.packages = [ pkgs.gcr ];
@@ -137,7 +139,10 @@
     # xdg-desktop-portal-hyprland is added automatically by programs.hyprland.enable.
     extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
     config.common = {
-      default = [ "hyprland" "gtk" ];
+      default = [
+        "hyprland"
+        "gtk"
+      ];
       "org.freedesktop.impl.portal.FileChooser" = "gtk";
     };
   };
